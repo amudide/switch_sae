@@ -7,7 +7,7 @@ from dictionary_learning.trainers.top_k import AutoEncoderTopK, TrainerTopK
 from dictionary_learning.evaluation import evaluate
 import wandb
 import argparse
-from config import lm, activation_dim, layer, hf
+from config import lm, activation_dim, layer, hf, steps
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gpu", required=True)
@@ -27,8 +27,8 @@ base_trainer_config = {
     'activation_dim' : activation_dim,
     'dict_size' : args.dict_ratio * activation_dim,
     'auxk_alpha' : 1/32,
-    'decay_start' : 24000,
-    'steps' : 30000,
+    'decay_start' : int(steps * 0.8),
+    'steps' : steps,
     'seed' : 0,
     'device' : device,
     'layer' : layer,
@@ -38,10 +38,11 @@ base_trainer_config = {
 
 trainer_configs = [(base_trainer_config | {'k': k}) for k in args.ks]
 
-wandb.init(entity="amudide", project="Gated", config={f'{trainer_config["wandb_name"]}-{i}' : trainer_config for i, trainer_config in enumerate(trainer_configs)})
+wandb.init(entity="amudide", project="TopK", config={f'{trainer_config["wandb_name"]}-{i}' : trainer_config for i, trainer_config in enumerate(trainer_configs)})
 
-trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=10, steps=400)
+trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=1000, steps=steps)
 
+print("Training finished. Evaluating SAE...", flush=True)
 for i, trainer_config in enumerate(trainer_configs):
     ae = AutoEncoderTopK.from_pretrained(f'dictionaries/{cfg_filename(trainer_config)}/ae.pt', k = trainer_config['k'])
     metrics = evaluate(ae, buffer)

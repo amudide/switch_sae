@@ -8,7 +8,7 @@ from dictionary_learning.trainers.gdm import GatedSAETrainer
 from dictionary_learning.evaluation import evaluate
 import wandb
 import argparse
-from config import lm, activation_dim, layer, hf
+from config import lm, activation_dim, layer, hf, steps
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gpu", required=True)
@@ -42,8 +42,9 @@ trainer_configs = [(base_trainer_config | {'l1_penalty': l1_penalty}) for l1_pen
 
 wandb.init(entity="amudide", project="Gated", config={f'{trainer_config["wandb_name"]}-{i}' : trainer_config for i, trainer_config in enumerate(trainer_configs)})
 
-trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=10, steps=400)
+trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=1000, steps=steps)
 
+print("Training finished. Evaluating SAE...", flush=True)
 for i, trainer_config in enumerate(trainer_configs):
     ae = GatedAutoEncoder.from_pretrained(f'dictionaries/{cfg_filename(trainer_config)}/ae.pt')
     metrics = evaluate(ae, buffer)

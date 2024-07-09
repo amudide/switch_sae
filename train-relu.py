@@ -8,7 +8,7 @@ from dictionary_learning.trainers.standard_new import StandardTrainerNew
 from dictionary_learning.evaluation import evaluate
 import wandb
 import argparse
-from config import lm, activation_dim, layer, hf
+from config import lm, activation_dim, layer, hf, steps
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gpu", required=True)
@@ -30,8 +30,8 @@ base_trainer_config = {
     'dict_size' : args.dict_ratio * activation_dim,
     'lr' : args.lr,
     'lambda_warm_steps' : 1500,
-    'decay_start' : 24000,
-    'steps' : 30000,
+    'decay_start' : int(steps * 0.8),
+    'steps' : steps,
     'seed' : 0,
     'device' : device,
     'wandb_name' : 'StandardTrainerNew_Anthropic'
@@ -41,8 +41,9 @@ trainer_configs = [(base_trainer_config | {'l1_penalty': l1_penalty}) for l1_pen
 
 wandb.init(entity="amudide", project="ReLU-New", config={f'{trainer_config["wandb_name"]}-{i}' : trainer_config for i, trainer_config in enumerate(trainer_configs)})
 
-trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=1000, steps=30000)
+trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=1000, steps=steps)
 
+print("Training finished. Evaluating SAE...", flush=True)
 for i, trainer_config in enumerate(trainer_configs):
     ae = AutoEncoderNew.from_pretrained(f'dictionaries/{cfg_filename(trainer_config)}/ae.pt')
     metrics = evaluate(ae, buffer)
