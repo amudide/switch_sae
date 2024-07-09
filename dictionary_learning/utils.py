@@ -25,3 +25,11 @@ def zst_to_generator(data_path):
         for line in text_stream:
             yield json.loads(line)['text']
     return generator()
+
+def cfg_filename(cfg):
+    result = []
+    for key in cfg:
+        value = str(cfg[key])
+        value = value.replace("/", "")
+        result.append(f"{key}:{value}")
+    return '_'.join(result)

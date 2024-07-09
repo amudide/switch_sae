@@ -4,6 +4,7 @@ run_experiment.sh
 nohup.out
 .DS_Store
 test.ipynb
+test.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
