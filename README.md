@@ -15,6 +15,7 @@
   - TopK auxiliary loss
   - Experiment with (Heaviside vs. Softmax) & (TopK per expert vs. TopK across chosen experts)
   - Experiment with switch SAE (heaviside vs. weighted)
+  - Don't zero out bad experts during evaluation (only during training)
 * Interpretability (7/11 - 7/14)
   - Do experts specialize?
 * Speed
