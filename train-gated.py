@@ -3,8 +3,8 @@ import torch as t
 from dictionary_learning import ActivationBuffer
 from dictionary_learning.training import trainSAE
 from dictionary_learning.utils import hf_dataset_to_generator, cfg_filename
-from dictionary_learning.dictionary import AutoEncoderNew
-from dictionary_learning.trainers.standard_new import StandardTrainerNew
+from dictionary_learning.dictionary import GatedAutoEncoder
+from dictionary_learning.trainers.gdm import GatedSAETrainer
 from dictionary_learning.evaluation import evaluate
 import wandb
 import argparse
@@ -24,17 +24,18 @@ data = hf_dataset_to_generator(hf)
 buffer = ActivationBuffer(data, model, submodule, d_submodule=activation_dim, device=device)
 
 base_trainer_config = {
-    'trainer' : StandardTrainerNew,
-    'dict_class' : AutoEncoderNew,
+    'trainer' : GatedSAETrainer,
+    'dict_class' : GatedAutoEncoder,
     'activation_dim' : activation_dim,
     'dict_size' : args.dict_ratio * activation_dim,
     'lr' : args.lr,
-    'lambda_warm_steps' : 1500,
-    'decay_start' : 24000,
-    'steps' : 30000,
+    'warmup_steps' : 1000,
+    'resample_steps' : None,
     'seed' : 0,
     'device' : device,
-    'wandb_name' : 'StandardTrainerNew_Anthropic'
+    'layer' : layer,
+    'lm_name' : lm,
+    'wandb_name' : 'GatedSAETrainer'
 }
 
 trainer_configs = [(base_trainer_config | {'l1_penalty': l1_penalty}) for l1_penalty in args.l1_penalties]
@@ -44,7 +45,7 @@ wandb.init(entity="amudide", project="Gated", config={f'{trainer_config["wandb_n
 trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=10, steps=400)
 
 for i, trainer_config in enumerate(trainer_configs):
-    ae = AutoEncoderNew.from_pretrained(f'dictionaries/{cfg_filename(trainer_config)}/ae.pt')
+    ae = GatedAutoEncoder.from_pretrained(f'dictionaries/{cfg_filename(trainer_config)}/ae.pt')
     metrics = evaluate(ae, buffer)
     log = {}
     log.update({f'{trainer_config["wandb_name"]}-{i}/{k}' : v for k, v in metrics.items()})
