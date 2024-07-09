@@ -1,9 +1,9 @@
-dictionaries
+dictionaries*
 wandb
-experiment*
 run_experiment.sh
 nohup.out
 .DS_Store
+test.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
