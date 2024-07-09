@@ -25,6 +25,8 @@
 * Questions
   - Should I cache the entire dataset instead of streaming it?
   - Should I change ln_1 to ln_2 (i.e. what does it mean to train a layer 8 residual stream SAE)?
+  - Scale of MSE, Delta CE
+  - Width of SAEs (32x, 64x, 128x etc.)
 
 ## Credits
 This repository is adapted from [dictionary_learning](https://github.com/saprmarks/dictionary_learning) by Samuel Marks and Aaron Mueller.
