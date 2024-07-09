@@ -8,16 +8,18 @@ from dictionary_learning.trainers.standard import StandardTrainer
 from dictionary_learning.evaluation import evaluate
 import wandb
 import argparse
-from config import lm, activation_dim, layer, hf, lr, dict_ratio
+from config import lm, activation_dim, layer, hf
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-g", "--gpu", required=True)
-parser.add_argument("-l", "--l1_penalties", nargs="+", type=float, required=True)
+parser.add_argument("--gpu", required=True)
+parser.add_argument('--lr', type=float, default=3e-4)
+parser.add_argument('--dict_ratio', type=int, default=32)
+parser.add_argument("--l1_penalties", nargs="+", type=float, required=True)
 args = parser.parse_args()
 
 device = f'cuda:{args.gpu}'
 model = LanguageModel(lm, device_map=device)
-submodule = model.transformer.h[layer] ## change?
+submodule = model.transformer.h[layer]
 data = hf_dataset_to_generator(hf)
 buffer = ActivationBuffer(data, model, submodule, d_submodule=activation_dim, device=device)
 
@@ -25,8 +27,8 @@ base_trainer_config = {
     'trainer' : StandardTrainer,
     'dict_class' : AutoEncoder,
     'activation_dim' : activation_dim,
-    'dict_size' : dict_ratio * activation_dim,
-    'lr' : lr,
+    'dict_size' : args.dict_ratio * activation_dim,
+    'lr' : args.lr,
     'warmup_steps' : 1000,
     'resample_steps' : None,
     'seed' : 0,
