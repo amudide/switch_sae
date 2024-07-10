@@ -10,7 +10,6 @@ from collections import namedtuple
 
 from ..config import DEBUG
 from ..dictionary import Dictionary
-from ..kernels import TritonDecoder
 from ..trainers.trainer import SAETrainer
 
 
@@ -64,16 +63,17 @@ class AutoEncoderTopK(Dictionary, nn.Module):
     def encode(self, x):
         return nn.functional.relu(self.encoder(x - self.b_dec))
     
-    def decode(self, top_acts, top_indices):
-        with t.cuda.device(top_indices.device.index):
-            d = TritonDecoder.apply(top_indices, top_acts, self.decoder.mT)
-            d.to(top_indices.device.index)
+    def decode(self, top_acts, top_indices, x):
+        result = t.zeros_like(x)
+        result.scatter_(-1, top_indices, top_acts)
+        d = t.matmul(result, self.decoder)
+
         return d + self.b_dec
     
     def forward(self, x, output_features=False):
         f = self.encode(x)
         top_acts, top_indices = f.topk(self.k, sorted=False)
-        x_hat = self.decode(top_acts, top_indices)
+        x_hat = self.decode(top_acts, top_indices, f)
         if not output_features:
             return x_hat
         else:
@@ -181,7 +181,7 @@ class TrainerTopK(SAETrainer):
         # Run the SAE
         f = self.ae.encode(x)
         top_acts, top_indices = f.topk(self.k, sorted=False)
-        x_hat = self.ae.decode(top_acts, top_indices)
+        x_hat = self.ae.decode(top_acts, top_indices, f)
         
         # Measure goodness of reconstruction
         e = x_hat - x
@@ -223,7 +223,7 @@ class TrainerTopK(SAETrainer):
 
             # Encourage the top ~50% of dead latents to predict the residual of the
             # top k living latents
-            e_hat = self.ae.decode(auxk_acts, auxk_indices)
+            e_hat = self.ae.decode(auxk_acts, auxk_indices, auxk_latents)
             auxk_loss = (e_hat - e).pow(2) #.sum(0)
             auxk_loss = scale * t.mean(auxk_loss / total_variance)
         else:

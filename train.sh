@@ -12,4 +12,3 @@ python train-topk.py --gpu 0 --ks 8 16
 python train-topk.py --gpu 1 --ks 32 48
 python train-topk.py --gpu 2 --ks 64 96
 python train-topk.py --gpu 3 --ks 128 192
-
