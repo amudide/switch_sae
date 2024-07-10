@@ -10,6 +10,7 @@ from collections import namedtuple
 
 from ..config import DEBUG
 from ..dictionary import Dictionary
+from ..kernels import TritonDecoder
 from ..trainers.trainer import SAETrainer
 
 
@@ -63,17 +64,16 @@ class AutoEncoderTopK(Dictionary, nn.Module):
     def encode(self, x):
         return nn.functional.relu(self.encoder(x - self.b_dec))
     
-    def decode(self, top_acts, top_indices, x):
-        result = t.zeros_like(x)
-        result.scatter_(-1, top_indices, top_acts)
-        d = t.matmul(result, self.decoder)
-
+    def decode(self, top_acts, top_indices):
+        d = TritonDecoder.apply(top_indices, top_acts, self.decoder.mT)
         return d + self.b_dec
     
     def forward(self, x, output_features=False):
-        f = self.encode(x)
+        # (rangell): some shape hacking going on here
+        f = self.encode(x.view(-1, x.shape[-1]))
         top_acts, top_indices = f.topk(self.k, sorted=False)
-        x_hat = self.decode(top_acts, top_indices, f)
+        x_hat = self.decode(top_acts, top_indices).view(x.shape)
+        f = f.view(*x.shape[:-1], f.shape[-1])
         if not output_features:
             return x_hat
         else:
@@ -100,7 +100,7 @@ class AutoEncoderTopK(Dictionary, nn.Module):
             "d_sae, d_sae d_in -> d_sae d_in",
         )
                    
-    def from_pretrained(path, k=0, device=None):
+    def from_pretrained(path, k=100, device=None):
         """
         Load a pretrained autoencoder from a file.
         """
@@ -113,7 +113,7 @@ class AutoEncoderTopK(Dictionary, nn.Module):
         return autoencoder
     
 
-class TrainerTopK(SAETrainer):
+class TopKTrainer(SAETrainer):
     """
     Top-K SAE training scheme.
     """
@@ -130,12 +130,14 @@ class TrainerTopK(SAETrainer):
                  layer=None,
                  lm_name=None,
                  wandb_name='AutoEncoderTopK',
+                 submodule_name=None,
     ):
         super().__init__(seed)
 
         assert layer is not None and lm_name is not None
         self.layer = layer
         self.lm_name = lm_name
+        self.submodule_name = submodule_name
 
         self.wandb_name = wandb_name
         self.steps = steps
@@ -181,7 +183,7 @@ class TrainerTopK(SAETrainer):
         # Run the SAE
         f = self.ae.encode(x)
         top_acts, top_indices = f.topk(self.k, sorted=False)
-        x_hat = self.ae.decode(top_acts, top_indices, f)
+        x_hat = self.ae.decode(top_acts, top_indices)
         
         # Measure goodness of reconstruction
         e = x_hat - x
@@ -223,7 +225,7 @@ class TrainerTopK(SAETrainer):
 
             # Encourage the top ~50% of dead latents to predict the residual of the
             # top k living latents
-            e_hat = self.ae.decode(auxk_acts, auxk_indices, auxk_latents)
+            e_hat = self.ae.decode(auxk_acts, auxk_indices)
             auxk_loss = (e_hat - e).pow(2) #.sum(0)
             auxk_loss = scale * t.mean(auxk_loss / total_variance)
         else:
@@ -239,7 +241,7 @@ class TrainerTopK(SAETrainer):
             return namedtuple('LossLog', ['x', 'x_hat', 'f', 'losses'])(
                 x, x_hat, f,
                 {
-                    'mse_loss': l2_loss.item(),
+                    'l2_loss': l2_loss.item(),
                     'auxk_loss': auxk_loss.item(),
                     'loss' : loss.item()
                 }
@@ -285,4 +287,5 @@ class TrainerTopK(SAETrainer):
             "layer" : self.layer,
             'lm_name' : self.lm_name,
             'wandb_name' : self.wandb_name,
+            'submodule_name' : self.submodule_name,
         }
