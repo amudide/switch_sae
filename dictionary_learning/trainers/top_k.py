@@ -100,7 +100,7 @@ class AutoEncoderTopK(Dictionary, nn.Module):
             "d_sae, d_sae d_in -> d_sae d_in",
         )
                    
-    def from_pretrained(path, k=100, device=None):
+    def from_pretrained(path, k=0, device=None):
         """
         Load a pretrained autoencoder from a file.
         """
@@ -231,7 +231,7 @@ class TrainerTopK(SAETrainer):
 
         l2_loss = e.pow(2).sum(dim=-1).mean()
         auxk_loss = auxk_loss.sum(dim=-1).mean()
-        loss = l2_loss + self.auxk_alpha + auxk_loss
+        loss = l2_loss + self.auxk_alpha * auxk_loss
         
         if not logging:
             return loss
@@ -239,7 +239,7 @@ class TrainerTopK(SAETrainer):
             return namedtuple('LossLog', ['x', 'x_hat', 'f', 'losses'])(
                 x, x_hat, f,
                 {
-                    'l2_loss': l2_loss.item(),
+                    'mse_loss': l2_loss.item(),
                     'auxk_loss': auxk_loss.item(),
                     'loss' : loss.item()
                 }

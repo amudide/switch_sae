@@ -50,5 +50,5 @@ for i, trainer_config in enumerate(trainer_configs):
     metrics = evaluate(ae, buffer)
     log = {}
     log.update({f'{trainer_config["wandb_name"]}-{i}/{k}' : v for k, v in metrics.items()})
-    wandb.log(log)
+    wandb.log(log, step=steps+1)
 wandb.finish()
