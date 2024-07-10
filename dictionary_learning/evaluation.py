@@ -154,6 +154,7 @@ def evaluate(
         
         x_hat, f = dictionary(x, output_features=True)
         l2_loss = t.linalg.norm(x - x_hat, dim=-1).mean()
+        mse_loss = (x - x_hat).pow(2).sum(dim=-1).mean()
         l1_loss = f.norm(p=1, dim=-1).mean()
         l0 = (f != 0).float().sum(dim=-1).mean()
         frac_alive = (f != 0).float().mean(dim=-1).mean()
@@ -173,6 +174,7 @@ def evaluate(
 
         out["l2_loss"] = l2_loss.item()
         out["l1_loss"] = l1_loss.item()
+        out["mse_loss"] = mse_loss.item()
         out["l0"] = l0.item()
         out["frac_alive"] = frac_alive.item()
         out["frac_variance_explained"] = frac_variance_explained.item()
