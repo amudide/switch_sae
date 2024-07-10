@@ -40,7 +40,7 @@ base_trainer_config = {
 
 trainer_configs = [(base_trainer_config | {'k': k}) for k in args.ks]
 
-wandb.init(entity="amudide", project="TopK", config={f'{trainer_config["wandb_name"]}-{i}' : trainer_config for i, trainer_config in enumerate(trainer_configs)})
+wandb.init(entity="amudide", project="TopK-Small", config={f'{trainer_config["wandb_name"]}-{i}' : trainer_config for i, trainer_config in enumerate(trainer_configs)})
 
 trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=10, steps=steps)
 

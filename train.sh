@@ -8,7 +8,10 @@ python train-gated.py --gpu 5 --l1_penalties 0.09 0.27
 python train-gated.py --gpu 6 --l1_penalties 0.81 2.43
 python train-gated.py --gpu 7 --l1_penalties 7.29 15
 
-python train-topk.py --gpu 0 --ks 8 16
-python train-topk.py --gpu 1 --ks 32 48
-python train-topk.py --gpu 2 --ks 64 96
-python train-topk.py --gpu 3 --ks 128 192
+python train-topk.py --gpu 4 --ks 8 16
+python train-topk.py --gpu 5 --ks 32 48
+python train-topk.py --gpu 6 --ks 64 96
+python train-topk.py --gpu 7 --ks 128 192
+
+cd /data/cb/scratch/amudide/switch_sae
+conda activate sae
