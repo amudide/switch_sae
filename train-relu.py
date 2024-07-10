@@ -12,7 +12,7 @@ from config import lm, activation_dim, layer, hf, steps
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gpu", required=True)
-parser.add_argument('--lr', type=float, default=5e-5)
+parser.add_argument('--lr', type=float, default=5e-5) ## 3e-4
 parser.add_argument('--dict_ratio', type=int, default=32)
 parser.add_argument("--l1_penalties", nargs="+", type=float, required=True)
 args = parser.parse_args()
@@ -29,7 +29,7 @@ base_trainer_config = {
     'activation_dim' : activation_dim,
     'dict_size' : args.dict_ratio * activation_dim,
     'lr' : args.lr,
-    'lambda_warm_steps' : 1500,
+    'lambda_warm_steps' : int(steps * 0.05),
     'decay_start' : int(steps * 0.8),
     'steps' : steps,
     'seed' : 0,
