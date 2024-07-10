@@ -6,6 +6,7 @@
 * Metrics (7/10 - 7/14)
   - Implement MoE-SAE & Switch SAE (7/9)
   - Load balancing loss (7/10)
+  - TopK aux loss, check if its correct and add for MoE (7/10)
   - More sweeps (e, experts, k, lr, load balance coeff, dict_ratio, etc.) (7/10 - 7/14)
     - Experiment with (Heaviside vs. Softmax) & (TopK per expert vs. TopK across chosen experts)
     - Experiment with switch SAE (heaviside vs. weighted)
