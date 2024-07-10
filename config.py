@@ -6,4 +6,4 @@ layer = 8
 hf = 'Skylion007/openwebtext'
 # hf = 'NeelNanda/pile-10k'
 steps = 30_000
-
+n_ctxs = int(1e4)

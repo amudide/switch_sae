@@ -7,7 +7,7 @@ from dictionary_learning.trainers.top_k import AutoEncoderTopK, TrainerTopK
 from dictionary_learning.evaluation import evaluate
 import wandb
 import argparse
-from config import lm, activation_dim, layer, hf, steps
+from config import lm, activation_dim, layer, hf, steps, n_ctxs
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gpu", required=True)
@@ -16,10 +16,10 @@ parser.add_argument("--ks", nargs="+", type=int, required=True)
 args = parser.parse_args()
 
 device = f'cuda:{args.gpu}'
-model = LanguageModel(lm, device_map=device)
+model = LanguageModel(lm, dispatch=True, device_map=device)
 submodule = model.transformer.h[layer]
 data = hf_dataset_to_generator(hf)
-buffer = ActivationBuffer(data, model, submodule, d_submodule=activation_dim, device=device)
+buffer = ActivationBuffer(data, model, submodule, d_submodule=activation_dim, n_ctxs=n_ctxs, device=device)
 
 base_trainer_config = {
     'trainer' : TrainerTopK,
