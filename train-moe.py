@@ -7,12 +7,15 @@ from dictionary_learning.trainers.moe import MoEAutoEncoder, MoETrainer
 from dictionary_learning.evaluation import evaluate
 import wandb
 import argparse
+import itertools
 from config import lm, activation_dim, layer, hf, steps, n_ctxs
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gpu", required=True)
 parser.add_argument('--dict_ratio', type=int, default=32)
 parser.add_argument("--ks", nargs="+", type=int, required=True)
+parser.add_argument("--num_experts", nargs="+", type=int, required=True)
+parser.add_argument("--es", nargs="+", type=int, required=True)
 args = parser.parse_args()
 
 device = f'cuda:{args.gpu}'
@@ -36,15 +39,16 @@ base_trainer_config = {
     'wandb_name' : 'MoEAutoEncoder'
 }
 
-trainer_configs = [(base_trainer_config | {'k': k}) for k in args.ks]
+trainer_configs = [(base_trainer_config | {'k': combo[0], 'experts': combo[1], 'e': combo[2]}) for combo in itertools.product(args.ks, args.num_experts, args.es)]
 
-wandb.init(entity="amudide", project="TopK", config={f'{trainer_config["wandb_name"]}-{i}' : trainer_config for i, trainer_config in enumerate(trainer_configs)})
+wandb.init(entity="amudide", project="MoE", config={f'{trainer_config["wandb_name"]}-{i}' : trainer_config for i, trainer_config in enumerate(trainer_configs)})
 
 trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=1000, steps=steps)
 
 print("Training finished. Evaluating SAE...", flush=True)
 for i, trainer_config in enumerate(trainer_configs):
-    ae = MoEAutoEncoder.from_pretrained(f'dictionaries/{cfg_filename(trainer_config)}/ae.pt', k = trainer_config['k'], device=device)
+    ae = MoEAutoEncoder.from_pretrained(f'dictionaries/{cfg_filename(trainer_config)}/ae.pt',
+                                        k = trainer_config['k'], experts = trainer_config['experts'], e = trainer_config['e'], device=device)
     metrics = evaluate(ae, buffer, device=device)
     log = {}
     log.update({f'{trainer_config["wandb_name"]}-{i}/{k}' : v for k, v in metrics.items()})

@@ -101,7 +101,7 @@ class MoEAutoEncoder(Dictionary, nn.Module):
         """
         state_dict = t.load(path)
         dict_size, activation_dim = state_dict['encoder.weight'].shape
-        autoencoder = AutoEncoderTopK(activation_dim, dict_size, k)
+        autoencoder = MoEAutoEncoder(activation_dim, dict_size, k)
         autoencoder.load_state_dict(state_dict)
         if device is not None:
             autoencoder.to(device)
@@ -113,7 +113,7 @@ class MoETrainer(SAETrainer):
     Top-K SAE training scheme.
     """
     def __init__(self,
-                 dict_class=AutoEncoderTopK,
+                 dict_class=MoEAutoEncoder,
                  activation_dim=512,
                  dict_size=64*512,
                  k=100,
@@ -124,7 +124,7 @@ class MoETrainer(SAETrainer):
                  device=None,
                  layer=None,
                  lm_name=None,
-                 wandb_name='AutoEncoderTopK',
+                 wandb_name='MoEAutoEncoder',
                  submodule_name=None,
     ):
         super().__init__(seed)
