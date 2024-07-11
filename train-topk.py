@@ -3,7 +3,7 @@ import torch as t
 from dictionary_learning import ActivationBuffer
 from dictionary_learning.training import trainSAE
 from dictionary_learning.utils import hf_dataset_to_generator, cfg_filename
-from dictionary_learning.trainers.top_k import AutoEncoderTopK, TopKTrainer
+from dictionary_learning.trainers.top_k import AutoEncoderTopK, TrainerTopK
 from dictionary_learning.evaluation import evaluate
 import wandb
 import argparse
@@ -22,7 +22,7 @@ data = hf_dataset_to_generator(hf)
 buffer = ActivationBuffer(data, model, submodule, d_submodule=activation_dim, n_ctxs=n_ctxs, device=device)
 
 base_trainer_config = {
-    'trainer' : TopKTrainer,
+    'trainer' : TrainerTopK,
     'dict_class' : AutoEncoderTopK,
     'activation_dim' : activation_dim,
     'dict_size' : args.dict_ratio * activation_dim,
