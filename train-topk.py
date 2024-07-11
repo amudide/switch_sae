@@ -45,7 +45,7 @@ trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_s
 print("Training finished. Evaluating SAE...", flush=True)
 for i, trainer_config in enumerate(trainer_configs):
     ae = AutoEncoderTopK.from_pretrained(f'dictionaries/{cfg_filename(trainer_config)}/ae.pt', k = trainer_config['k'], device=device)
-    metrics = evaluate(ae, buffer)
+    metrics = evaluate(ae, buffer, device=device)
     log = {}
     log.update({f'{trainer_config["wandb_name"]}-{i}/{k}' : v for k, v in metrics.items()})
     wandb.log(log, step=steps+1)
