@@ -40,25 +40,45 @@ def geometric_median(points: t.Tensor, max_iter: int = 100, tol: float = 1e-5):
 
 class MoEAutoEncoder(Dictionary, nn.Module):
     """
-    The top-k autoencoder architecture and initialization used in https://arxiv.org/abs/2406.04093
+    The MoE autoencoder architecture
     """
-    def __init__(self, activation_dim, dict_size, k):
+    def __init__(self, activation_dim, dict_size, k, experts, e, heaviside):
         super().__init__()
         self.activation_dim = activation_dim
         self.dict_size = dict_size
         self.k = k
+        self.experts = experts
+        self.e = e
+        self.heaviside = heaviside
+        self.expert_dict_size = self.dict_size // self.experts
         
         self.encoder = nn.Linear(activation_dim, dict_size)
         self.encoder.bias.data.zero_()
+
+        self.gate = nn.Linear(activation_dim, experts)
+        self.gate.bias.data.zero_()
         
         self.decoder = nn.Parameter(self.encoder.weight.data.clone())
         self.set_decoder_norm_to_unit_norm()
         
-        self.b_dec = self.b_dec = nn.Parameter(t.zeros(activation_dim))
+        self.b_dec = nn.Parameter(t.zeros(activation_dim))
+        self.b_gate = nn.Parameter(t.zeros(activation_dim))
 
     def encode(self, x):
-        return nn.functional.relu(self.encoder(x - self.b_dec))
-    
+        z = nn.functional.relu(self.encoder(x - self.b_dec))
+        gate = nn.functional.relu(self.gate(x - self.b_gate))
+
+        top_values, top_indices = gate.topk(self.e, dim=-1)
+        top_e = t.full_like(gate, float('-inf'))
+        top_e.scatter_(-1, top_indices, top_values)
+        top_e = t.nn.functional.softmax(top_e, dim=-1)
+
+        if self.heaviside:
+            top_e = (top_e > 0).float()
+
+        top_e_expanded = einops.repeat(top_e, '... e -> ... (e d)', d=self.expert_dict_size)
+        return z * top_e_expanded
+
     def decode(self, top_acts, top_indices):
         d = TritonDecoder.apply(top_indices, top_acts, self.decoder.mT)
         return d + self.b_dec
@@ -95,13 +115,13 @@ class MoEAutoEncoder(Dictionary, nn.Module):
             "d_sae, d_sae d_in -> d_sae d_in",
         )
                    
-    def from_pretrained(path, k=100, device=None):
+    def from_pretrained(path, k=100, experts=16, e=1, heaviside=False, device=None):
         """
         Load a pretrained autoencoder from a file.
         """
         state_dict = t.load(path)
         dict_size, activation_dim = state_dict['encoder.weight'].shape
-        autoencoder = MoEAutoEncoder(activation_dim, dict_size, k)
+        autoencoder = MoEAutoEncoder(activation_dim, dict_size, k, experts, e, heaviside)
         autoencoder.load_state_dict(state_dict)
         if device is not None:
             autoencoder.to(device)
@@ -110,13 +130,16 @@ class MoEAutoEncoder(Dictionary, nn.Module):
 
 class MoETrainer(SAETrainer):
     """
-    Top-K SAE training scheme.
+    MoE SAE training scheme.
     """
     def __init__(self,
                  dict_class=MoEAutoEncoder,
                  activation_dim=512,
                  dict_size=64*512,
                  k=100,
+                 experts=16,
+                 e=1,
+                 heaviside=False,
                  auxk_alpha=1/32,  # see Appendix A.2
                  decay_start=24000, # when does the lr decay start
                  steps=30000, # when when does training end
@@ -137,12 +160,15 @@ class MoETrainer(SAETrainer):
         self.wandb_name = wandb_name
         self.steps = steps
         self.k = k
+        self.experts = experts
+        self.e = e
+        self.heaviside = heaviside
         if seed is not None:
             t.manual_seed(seed)
             t.cuda.manual_seed_all(seed)
 
         # Initialise autoencoder
-        self.ae = dict_class(activation_dim, dict_size, k)
+        self.ae = dict_class(activation_dim, dict_size, k, experts, e, heaviside)
         if device is None:
             self.device = 'cuda' if t.cuda.is_available() else 'cpu'
         else:
@@ -228,7 +254,7 @@ class MoETrainer(SAETrainer):
 
         l2_loss = e.pow(2).sum(dim=-1).mean()
         auxk_loss = auxk_loss.sum(dim=-1).mean()
-        loss = l2_loss + self.auxk_alpha * auxk_loss
+        loss = l2_loss + self.auxk_alpha * auxk_loss * 0 ## NO AUX LOSS
         
         if not logging:
             return loss
@@ -248,6 +274,7 @@ class MoETrainer(SAETrainer):
         if step == 0:
             median = geometric_median(x)
             self.ae.b_dec.data = median
+            self.ae.b_gate.data = median
             
         # Make sure the decoder is still unit-norm
         self.ae.set_decoder_norm_to_unit_norm()
@@ -270,14 +297,17 @@ class MoETrainer(SAETrainer):
     @property
     def config(self):
         return {
-            'trainer_class' : 'TrainerTopK',
-            'dict_class' : 'AutoEncoderTopK',
+            'trainer_class' : 'MoETrainer',
+            'dict_class' : 'MoEAutoEncoder',
             'lr' : self.lr,
             'steps' : self.steps,
             'seed' : self.seed,
             'activation_dim' : self.ae.activation_dim,
             'dict_size' : self.ae.dict_size,
             'k': self.ae.k,
+            'experts': self.ae.experts,
+            'e': self.ae.e,
+            'heaviside': self.ae.heaviside,
             'device' : self.device,
             "layer" : self.layer,
             'lm_name' : self.lm_name,
