@@ -13,7 +13,7 @@ python train-relu.py --gpu 1 --l1_penalties 75 95
 python train-relu.py --gpu 2 --l1_penalties 1 2
 python train-relu.py --gpu 3 --l1_penalties 3 4
 
-python train-gated.py --gpu 6 --l1_penalties 1 1.46
+python train-gated.py --gpu 3 --l1_penalties 1 1.46
 python train-gated.py --gpu 4 --l1_penalties 2.13 3.11
 python train-gated.py --gpu 5 --l1_penalties 4.53 6.62
 python train-gated.py --gpu 6 --l1_penalties 9.65 14.09
