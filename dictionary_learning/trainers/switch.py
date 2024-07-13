@@ -51,31 +51,32 @@ class SwitchAutoEncoder(Dictionary, nn.Module):
         self.heaviside = heaviside
         self.expert_dict_size = self.dict_size // self.experts
         
-        self.encoder = nn.Linear(activation_dim, dict_size)
-        self.encoder.bias.data.zero_()
+        self.encoder = nn.Linear(activation_dim, dict_size, bias=False)
+        #self.encoder.bias.data.zero_()
 
-        self.gate = nn.Linear(activation_dim, experts, bias=False)
-        #self.gate.bias.data.zero_()
+        self.router = nn.Linear(activation_dim, experts, bias=False)
+        #self.router.bias.data.zero_()
         
         self.decoder = nn.Parameter(self.encoder.weight.data.clone())
         self.set_decoder_norm_to_unit_norm()
         
         self.b_dec = nn.Parameter(t.zeros(activation_dim))
-        self.b_gate = nn.Parameter(t.zeros(activation_dim))
+        self.b_router = nn.Parameter(t.zeros(activation_dim))
 
     def encode(self, x):
         z = nn.functional.relu(self.encoder(x - self.b_dec))
-        gate = t.nn.functional.softmax(self.gate(x - self.b_gate))
+        h = self.router(x - self.b_router)
+        p = t.nn.functional.softmax(h, dim=-1)
 
-        top_values, top_indices = gate.topk(1, dim=-1)
-        top_e = t.zeros_like(gate)
-        top_e.scatter_(-1, top_indices, top_values)
+        top_values, top_indices = p.topk(1, dim=-1)
+        filter_p = t.zeros_like(p)
+        filter_p.scatter_(-1, top_indices, top_values)
 
         if self.heaviside:
-            top_e = (top_e > 0).float()
+            filter_p = (filter_p > 0).float()
 
-        top_e_expanded = einops.repeat(top_e, '... e -> ... (e d)', d=self.expert_dict_size)
-        return z * top_e_expanded
+        filter_p_expanded = einops.repeat(filter_p, '... e -> ... (e d)', d=self.expert_dict_size)
+        return z * filter_p_expanded
 
     def decode(self, top_acts, top_indices):
         d = TritonDecoder.apply(top_indices, top_acts, self.decoder.mT)
@@ -270,7 +271,7 @@ class SwitchTrainer(SAETrainer):
         if step == 0:
             median = geometric_median(x)
             self.ae.b_dec.data = median
-            self.ae.b_gate.data = median
+            self.ae.b_router.data = median
             
         # Make sure the decoder is still unit-norm
         self.ae.set_decoder_norm_to_unit_norm()
