@@ -1,3 +1,8 @@
+## ADD WANDB NAME TO ARGPARSE FOR SH FILES!
+
+python train-topk.py --gpu 3 --ks 8 16 32 48 --dict_ratio 64
+python train-topk.py --gpu 4 --ks 64 96 128 192 --dict_ratio 64
+
 python train-topk.py --gpu 0 --ks 8 16
 python train-topk.py --gpu 1 --ks 32 48
 python train-topk.py --gpu 2 --ks 64 96
