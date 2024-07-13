@@ -28,7 +28,6 @@ base_trainer_config = {
     'trainer' : SwitchTrainer,
     'dict_class' : SwitchAutoEncoder,
     'activation_dim' : activation_dim,
-    'dict_size' : args.dict_ratio * activation_dim * args.num_experts,
     'auxk_alpha' : 1/32,
     'decay_start' : int(steps * 0.8),
     'steps' : steps,
@@ -39,7 +38,7 @@ base_trainer_config = {
     'wandb_name' : 'SwitchAutoEncoder'
 }
 
-trainer_configs = [(base_trainer_config | {'k': combo[0], 'experts': combo[1], 'heaviside': combo[2]}) for combo in itertools.product(args.ks, args.num_experts, args.heavisides)]
+trainer_configs = [(base_trainer_config | {'k': combo[0], 'experts': combo[1], 'dict_size' : args.dict_ratio * activation_dim * combo[1], 'heaviside': combo[2]}) for combo in itertools.product(args.ks, args.num_experts, args.heavisides)]
 
 wandb.init(entity="amudide", project="Switch (FLOP Matched)", config={f'{trainer_config["wandb_name"]}-{i}' : trainer_config for i, trainer_config in enumerate(trainer_configs)})
 
