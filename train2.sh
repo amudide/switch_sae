@@ -3,10 +3,10 @@
 python train-topk.py --gpu 3 --ks 8 16 32 48 --dict_ratio 64
 python train-topk.py --gpu 4 --ks 64 96 128 192 --dict_ratio 64
 
-python train-topk.py --gpu 0 --ks 8 16
-python train-topk.py --gpu 1 --ks 32 48
-python train-topk.py --gpu 2 --ks 64 96
-python train-topk.py --gpu 3 --ks 128 192
+python train-topk.py --gpu 4 --ks 8 16
+python train-topk.py --gpu 5 --ks 32 48
+python train-topk.py --gpu 6 --ks 64 96
+python train-topk.py --gpu 7 --ks 128 192
 
 python train-relu.py --gpu 4 --l1_penalties 5 6.46
 python train-relu.py --gpu 5 --l1_penalties 8.34 10.78

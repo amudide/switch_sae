@@ -41,7 +41,7 @@ trainer_configs = [(base_trainer_config | {'l1_penalty': l1_penalty}) for l1_pen
 
 wandb.init(entity="amudide", project="ReLU", config={f'{trainer_config["wandb_name"]}-{i}' : trainer_config for i, trainer_config in enumerate(trainer_configs)})
 
-trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=1000, steps=steps)
+trainSAE(buffer, trainer_configs=trainer_configs, save_dir='dictionaries', log_steps=1, steps=steps)
 
 print("Training finished. Evaluating SAE...", flush=True)
 for i, trainer_config in enumerate(trainer_configs):
