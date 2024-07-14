@@ -11,10 +11,11 @@
   - See how much speedup we get for 64x SAEs while retaining ReLU performance
   - Different bias for each expert? Seems bad.
   - Don't zero out bad experts during evaluation (only during training) [just change the eval code in the train script] [don't need to train new, just use old but eval diff]
-* Write blog post & incorporate feedback (7/15 - 7/19)
 * Interpretability
   - Do experts specialize?
   - MMCS
+  - Spectral Clustering
+* Write blog post & incorporate feedback (7/15 - 7/19)
 * Speed
   - Speed benchmarks (FLOPs, Clock Time)
   - Fast Switch SAE (Sorting)
