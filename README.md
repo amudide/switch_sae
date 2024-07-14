@@ -3,12 +3,13 @@
 </h3>
 
 ## To-Do
-* Training (7/12 - 7/6)
+* Training (7/12 - 7/16)
   - Load balancing loss (7/13)
   - AuxK loss (7/13) [not really important]
   - More sweeps (e, experts, k, lr, load balance coeff, dict_ratio, etc.) (7/12 - 7/16)
 * Post-training (7/17 - 7/19)
   - Don't zero out bad experts during evaluation (only during training) [just change the eval code in the train script] [don't need to train new, just use old but eval diff]
+  - Expert distribution (how close to uniform?)
   - Do experts specialize?
   - MMCS
   - Spectral Clustering correspondence?
