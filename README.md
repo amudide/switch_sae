@@ -24,6 +24,7 @@
   - PyTorch MoE
 * Appendix
   - See how much speedup we get for 64x, 128x, 256x SAEs while retaining ReLU performance. Scaling laws.
+  - Logit jitter (described in Switch Transformer and ST MoE). Multiply each logit by uniform number in [0.99, 1.01]
 
 
 ## Credits

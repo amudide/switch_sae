@@ -24,5 +24,16 @@ python train-switch.py --gpu 6 --ks 64 --num_experts 16 --lb_alphas 3 10
 python train-switch.py --gpu 7 --ks 64 --num_experts 16 --lb_alphas 30 100
 
 
+
+python train-switch.py --gpu 4 --ks 64 --num_experts 32 --lb_alphas 0 0.001
+python train-switch.py --gpu 5 --ks 64 --num_experts 32 --lb_alphas 0.003 0.01
+python train-switch.py --gpu 6 --ks 64 --num_experts 32 --lb_alphas 0.03 0.1
+
+python train-switch.py --gpu 5 --ks 64 --num_experts 32 --lb_alphas 0.3 1
+python train-switch.py --gpu 6 --ks 64 --num_experts 32 --lb_alphas 3 10
+python train-switch.py --gpu 7 --ks 64 --num_experts 32 --lb_alphas 30 100
+
+
+
 cd /data/cb/scratch/amudide/switch_sae
 conda activate sae
