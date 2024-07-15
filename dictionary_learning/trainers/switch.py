@@ -138,6 +138,7 @@ class SwitchTrainer(SAETrainer):
                  k=100,
                  experts=16,
                  heaviside=False,
+                 lb_alpha=0.01,
                  auxk_alpha=1/32,  # see Appendix A.2
                  decay_start=24000, # when does the lr decay start
                  steps=30000, # when when does training end
@@ -160,6 +161,7 @@ class SwitchTrainer(SAETrainer):
         self.k = k
         self.experts = experts
         self.heaviside = heaviside
+        self.lb_alpha = lb_alpha
         if seed is not None:
             t.manual_seed(seed)
             t.cuda.manual_seed_all(seed)
@@ -248,10 +250,23 @@ class SwitchTrainer(SAETrainer):
             auxk_loss = scale * t.mean(auxk_loss / total_variance)
         else:
             auxk_loss = x_hat.new_tensor(0.0)
+        
+        ## Load Balancing Loss
+
+        h = self.ae.router(x - self.ae.b_router)
+        p = t.nn.functional.softmax(h, dim=-1)
+
+        flb = t.argmax(p, dim=1)
+        flb = t.nn.functional.one_hot(flb, num_classes=self.experts).float()
+        flb = flb.mean(dim=0)
+
+        P = p.mean(dim=0)
+
+        lb_loss = self.experts * t.dot(flb, P) ## minimum value is 1
 
         l2_loss = e.pow(2).sum(dim=-1).mean()
         auxk_loss = auxk_loss.sum(dim=-1).mean()
-        loss = l2_loss + self.auxk_alpha * auxk_loss * 0 ## NO AUX LOSS
+        loss = l2_loss + self.lb_alpha * self.activation_dim * lb_loss ## + self.auxk_alpha * auxk_loss ## NO AUX LOSS
         
         if not logging:
             return loss
@@ -261,6 +276,7 @@ class SwitchTrainer(SAETrainer):
                 {
                     'l2_loss': l2_loss.item(),
                     'auxk_loss': auxk_loss.item(),
+                    'lb_loss': lb_loss.item(),
                     'loss' : loss.item()
                 }
             )
@@ -304,6 +320,7 @@ class SwitchTrainer(SAETrainer):
             'k': self.ae.k,
             'experts': self.ae.experts,
             'heaviside': self.ae.heaviside,
+            'lb_alpha': self.lb_alpha,
             'device' : self.device,
             "layer" : self.layer,
             'lm_name' : self.lm_name,
