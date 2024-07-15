@@ -21,3 +21,11 @@ python train-switch-flop.py --gpu 4 --ks 64 128 192 --num_experts 4
 
 python train-switch-flop.py --gpu 6 --ks 8 16 32 --num_experts 8
 python train-switch-flop.py --gpu 7 --ks 64 128 192 --num_experts 8
+
+## TODO
+
+python train-switch-flop.py --gpu 3 --ks 64 --num_experts 1 2
+python train-switch-flop.py --gpu 4 --ks 64 --num_experts 4
+python train-switch-flop.py --gpu 6 --ks 64 --num_experts 8
+python train-switch-flop.py --gpu 7 --ks 64 --num_experts 16
+
