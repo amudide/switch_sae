@@ -15,7 +15,7 @@ parser.add_argument("--gpu", required=True)
 parser.add_argument('--dict_ratio', type=int, default=32)
 parser.add_argument("--ks", nargs="+", type=int, required=True)
 parser.add_argument("--num_experts", nargs="+", type=int, required=True)
-parser.add_argument("--lb_alphas", nargs="+", type=float, required=True)
+parser.add_argument("--lb_alphas", nargs="+", type=float, default=[3.0])
 parser.add_argument("--heavisides", nargs="+", type=str2bool, default=[False])
 args = parser.parse_args()
 
