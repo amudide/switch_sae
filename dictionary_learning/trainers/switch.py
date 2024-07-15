@@ -155,6 +155,7 @@ class SwitchTrainer(SAETrainer):
         self.layer = layer
         self.lm_name = lm_name
         self.submodule_name = submodule_name
+        self.activation_dim = activation_dim
 
         self.wandb_name = wandb_name
         self.steps = steps

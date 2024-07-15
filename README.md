@@ -15,6 +15,9 @@
 
 <br>
 
+* True MoE
+  - https://github.com/lucidrains/mixture-of-experts/tree/master
+  - https://github.com/lucidrains/st-moe-pytorch
 * Speed
   - Speed benchmarks (FLOPs, Clock Time)
   - Fast Switch SAE (Sorting)
