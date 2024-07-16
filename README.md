@@ -11,6 +11,7 @@
   - Do experts specialize?
   - MMCS
   - Spectral Clustering correspondence?
+  - Check how similar b_dec and b_router are
 * Write blog post & incorporate feedback (7/14 - 7/19)
 
 <br>
