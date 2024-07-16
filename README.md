@@ -12,16 +12,14 @@
   - MMCS
   - Spectral Clustering correspondence?
   - Check how similar b_dec and b_router are
-* Write blog post & incorporate feedback (7/14 - 7/19)
+* Write blog post & incorporate feedback (7/16 - 7/20)
 
 <br>
 
 * True MoE
   - https://github.com/lucidrains/mixture-of-experts/tree/master
   - https://github.com/lucidrains/st-moe-pytorch
-* Speed
-  - Speed benchmarks (FLOPs, Clock Time)
-  - Fast Switch SAE (Sorting)
+  - Benchmarks (FLOPs, Clock Time)
   - PyTorch MoE
 * Appendix
   - See how much speedup we get for 64x, 128x, 256x SAEs while retaining ReLU performance. Scaling laws.
