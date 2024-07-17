@@ -36,12 +36,12 @@ python train-switch-flop.py --gpu 5 --ks 8 16 --num_experts 2
 python train-switch-flop.py --gpu 6 --ks 32 64 --num_experts 2
 python train-switch-flop.py --gpu 7 --ks 128 192 --num_experts 2
 
-#### TODO
-
 ## Sample Efficiency
 
-python train-switch-flop.py --gpu 7 --ks 64 --num_experts 16
-python train-switch-flop.py --gpu 7 --ks 64 --num_experts 32
+python train-switch-flop.py --gpu 3 --ks 64 --num_experts 16
+python train-switch-flop.py --gpu 4 --ks 64 --num_experts 32
+
+#### TODO
 
 ## FLOP-matched
 

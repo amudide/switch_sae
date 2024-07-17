@@ -3,8 +3,6 @@
 </h3>
 
 ## To-Do
-* Training (7/12 - 7/16)
-  - More sweeps (experts, k, lb_alpha, flop-matched, etc.) (7/12 - 7/16)
 * Post-training (7/17 - 7/19)
   - Don't zero out bad experts during evaluation (only during training) [just change the eval code in the train script] [don't need to train new, just use old but eval diff]
   - Expert distribution (how close to uniform?)
@@ -12,7 +10,7 @@
   - MMCS
   - Spectral Clustering correspondence?
   - Check how similar b_dec and b_router are
-* Write blog post & incorporate feedback (7/16 - 7/20)
+* Write blog post (7/16 - 7/20)
 
 <br>
 
