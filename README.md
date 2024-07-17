@@ -1,5 +1,5 @@
 <h3 align="center">
-  Efficient Dictionary Learning via Switch Sparse Autoencoders (SAEs)
+  Efficient Dictionary Learning with Switch Sparse Autoencoders (SAEs)
 </h3>
 
 ## To-Do
