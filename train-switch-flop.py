@@ -23,7 +23,7 @@ device = f'cuda:{args.gpu}'
 model = LanguageModel(lm, dispatch=True, device_map=device)
 submodule = model.transformer.h[layer]
 data = hf_dataset_to_generator(hf)
-buffer = ActivationBuffer(data, model, submodule, d_submodule=activation_dim, n_ctxs=n_ctxs//2, device=device) ## 1/2 to save memory
+buffer = ActivationBuffer(data, model, submodule, d_submodule=activation_dim, out_batch_size=2048, n_ctxs=n_ctxs//2, device=device) ## 1/2 context, 1/4 batch size to save memory
 
 base_trainer_config = {
     'trainer' : SwitchTrainer,
