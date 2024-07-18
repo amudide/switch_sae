@@ -5,5 +5,5 @@ activation_dim = 768
 layer = 8
 hf = 'Skylion007/openwebtext'
 # hf = 'NeelNanda/pile-10k'
-steps = 100_000
+steps = 400_000
 n_ctxs = int(1e4)
