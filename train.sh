@@ -1,3 +1,12 @@
+python train-switch-1on.py --gpu 4 --ks 8 --num_experts 32 --heavisides True
+python train-switch-1on.py --gpu 5 --ks 16 --num_experts 32 --heavisides True
+python train-switch-1on.py --gpu 6 --ks 32 --num_experts 32 --heavisides True
+python train-switch-1on.py --gpu 7 --ks 48 --num_experts 32 --heavisides True
+python train-switch-1on.py --gpu 4 --ks 64 --num_experts 32 --heavisides True
+python train-switch-1on.py --gpu 5 --ks 96 --num_experts 32 --heavisides True
+python train-switch-1on.py --gpu 6 --ks 128 --num_experts 32 --heavisides True
+python train-switch-1on.py --gpu 7 --ks 192 --num_experts 32 --heavisides True
+
 python train-switch-1on.py --gpu 4 --ks 8 16 --num_experts 32
 python train-switch-1on.py --gpu 5 --ks 32 48 --num_experts 32
 python train-switch-1on.py --gpu 6 --ks 64 96 --num_experts 32

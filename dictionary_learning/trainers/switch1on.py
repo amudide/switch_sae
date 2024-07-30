@@ -266,7 +266,7 @@ class SwitchTrainer(SAETrainer):
 
         P = p.mean(dim=0)
 
-        lb_loss = self.experts * t.dot(flb, P) ## minimum value is 1
+        lb_loss = (self.experts - 1) * t.dot(flb, P) ## minimum value is 1
 
         l2_loss = e.pow(2).sum(dim=-1).mean()
         auxk_loss = auxk_loss.sum(dim=-1).mean()
