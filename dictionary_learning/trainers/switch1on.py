@@ -261,7 +261,7 @@ class SwitchTrainer(SAETrainer):
         p = t.nn.functional.softmax(h, dim=-1)
 
         flb = t.argmax(p, dim=1)
-        flb = t.nn.functional.one_hot(flb, num_classes=self.experts).float()
+        flb = t.nn.functional.one_hot(flb, num_classes=self.experts - 1).float()
         flb = flb.mean(dim=0)
 
         P = p.mean(dim=0)

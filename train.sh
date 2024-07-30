@@ -1,3 +1,17 @@
+python train-switch-1on.py --gpu 4 --ks 8 16 --num_experts 32
+python train-switch-1on.py --gpu 5 --ks 32 48 --num_experts 32
+python train-switch-1on.py --gpu 6 --ks 64 96 --num_experts 32
+python train-switch-1on.py --gpu 7 --ks 128 192 --num_experts 32
+
+python train-switch-1on.py --gpu 5 --ks 64 --num_experts 32 --lb_alphas 0.001 0.003
+python train-switch-1on.py --gpu 6 --ks 64 --num_experts 32 --lb_alphas 0.01 0.03
+python train-switch-1on.py --gpu 7 --ks 64 --num_experts 32 --lb_alphas 0.1 0.3
+python train-switch-1on.py --gpu 5 --ks 64 --num_experts 32 --lb_alphas 1 3
+python train-switch-1on.py --gpu 6 --ks 64 --num_experts 32 --lb_alphas 10 30
+python train-switch-1on.py --gpu 7 --ks 64 --num_experts 32 --lb_alphas 100 300
+
+## Pre-blog post
+
 python train-switch.py --gpu 0 --ks 8 16 --num_experts 16
 python train-switch.py --gpu 1 --ks 32 48 --num_experts 16
 python train-switch.py --gpu 2 --ks 64 96 --num_experts 16
