@@ -5,6 +5,7 @@ import sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 from dictionary_learning.trainers.switch import SwitchAutoEncoder
+from dictionary_learning.trainers.top_k import AutoEncoderTopK
 import einops
 import matplotlib.pyplot as plt
 import torch
@@ -21,50 +22,14 @@ os.makedirs("plots/compare_geometry", exist_ok=True)
 
 torch.set_grad_enabled(False)
 
-# %%
 
-experts = [16, 32, 64, 128]
+experts = [1, 16, 32, 64, 128]
 ks = [8, 16, 32, 48, 64, 96, 128, 192]
 
 device = "cuda:1"
 # device = "cpu"
 
 threshold = 0.9
-
-intra_sae_max_sims = {}
-
-fig, axs = plt.subplots(len(experts), len(ks), figsize=(20, 10))
-
-for i, num_experts in enumerate(experts):
-
-    for j, k in enumerate(tqdm(ks)):
-        ax = axs[i, j]
-
-        ae = SwitchAutoEncoder.from_pretrained(f"../dictionaries/fixed-width/{num_experts}_experts/k{k}/ae.pt", k=k, experts=num_experts, device=device)
-
-        normalized_weights = ae.encoder.weight / ae.encoder.weight.norm(dim=-1, keepdim=True)
-
-        sims = normalized_weights @ normalized_weights.T
-
-        sims.fill_diagonal_(0)
-
-        num_dupes = (sims > threshold).sum(dim=-1).cpu().numpy()
-
-        ax.hist([i for i in num_dupes if i != 0], bins=100)
-
-        ax.set_title(f"{num_experts} experts, k={k}")
-
-
-fig.suptitle(f"Number of duplicates per feature, threshold={threshold}")
-
-fig.supxlabel("Number of duplicates")
-
-fig.supylabel("Number of features")
-
-plt.tight_layout()
-
-plt.savefig("plots/compare_geometry/num_duplicates_per_feature_fixed_width.png")
-
 
 # %%
 
@@ -92,14 +57,15 @@ def open_neuronpedia(features: list[int], layer: int, name: str = "temporary_lis
 jb_sae = get_jb_sae(layer=8, device=device)
 normalized_jb_weights = jb_sae.W_dec.data / jb_sae.W_dec.data.norm(dim=-1, keepdim=True)
 
-
-
 k = 32
 num_experts = 64
 
+topk_sae = AutoEncoderTopK.from_pretrained(f"../dictionaries/topk/k{k}/ae.pt", k=k, device=device)
+normalized_topk_weights = topk_sae.decoder.data / topk_sae.decoder.data.norm(dim=-1, keepdim=True)
+
 ae = SwitchAutoEncoder.from_pretrained(f"../dictionaries/fixed-width/{num_experts}_experts/k{k}/ae.pt", k=k, experts=num_experts, device=device)
 
-normalized_weights = ae.encoder.weight / ae.encoder.weight.norm(dim=-1, keepdim=True)
+normalized_weights = ae.decoder.data / ae.decoder.data.norm(dim=-1, keepdim=True)
 
 sims = normalized_weights @ normalized_weights.T
 
@@ -122,6 +88,18 @@ plt.show()
 average_sim = most_similar_to_jb.mean().item()
 print(f"Average cosine similarity to JB SAE: {average_sim}")
 
+most_similar_to_topk = (normalized_weights @ normalized_topk_weights.T).max(dim=0).values
+plt.hist(most_similar_to_topk.cpu().numpy(), bins=100)
+plt.show()
+
+average_sim = most_similar_to_topk.mean().item()
+print(f"Average cosine similarity to top-k SAE: {average_sim}")
+
+
+# %%
+
+
+index_and_topk = []
 
 for i in sorted_indices:
     if num_dupes[i] < cutoff:
@@ -135,8 +113,15 @@ for i in sorted_indices:
 
     top_k_result = torch.topk(jb_feature_sims, top_k)
 
-    top_k_indices = top_k_result.indices.cpu().numpy()
-    top_k_values = top_k_result.values.cpu().numpy()
+    index_and_topk.append((i, top_k_result.indices.cpu().numpy(), top_k_result.values.cpu().numpy()))
+    
+
+# %%
+
+# Sort by topk similarity
+index_and_topk.sort(key=lambda x: x[2][0], reverse=True)
+
+for i, top_k_indices, top_k_values in index_and_topk:
 
     open_neuronpedia(top_k_indices, layer=8, name=f"feature {i} ({num_dupes[i]} dupes) most similar: {top_k_values}")
 

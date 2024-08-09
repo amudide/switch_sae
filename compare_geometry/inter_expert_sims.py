@@ -19,9 +19,9 @@ device = "cuda:0"
 
 ae = SwitchAutoEncoder.from_pretrained(f"../dictionaries/fixed-width/{num_experts}_experts/k{k}/ae.pt", k=k, experts=num_experts, device=device)
 
-print(ae.encoder.weight.shape)
-vectors_per_expert = len(ae.encoder.weight) // num_experts
-experts = einops.rearrange(ae.encoder.weight, "(experts n) d -> experts n d", experts=num_experts)
+print(ae.decoder.data.shape)
+vectors_per_expert = len(ae.decoder.data) // num_experts
+experts = einops.rearrange(ae.decoder.data, "(experts n) d -> experts n d", experts=num_experts)
 # %%
 
 normalized_experts = experts / experts.norm(dim=-1, keepdim=True)

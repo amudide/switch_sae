@@ -4,6 +4,7 @@ import sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 from dictionary_learning.trainers.switch import SwitchAutoEncoder
+from dictionary_learning.trainers.top_k import AutoEncoderTopK
 import einops
 import matplotlib.pyplot as plt
 import torch
@@ -21,10 +22,10 @@ for take_max in [False, True]:
     for use_flop_matched in [False, True]:
 
         if use_flop_matched:
-            experts = [2, 4, 8]
+            experts = [1, 2, 4, 8]
             ks = [16, 32, 64, 128, 192]
         else:
-            experts = [16, 32, 64, 128]
+            experts = [1, 16, 32, 64, 128]
             ks = [8, 16, 32, 48, 64, 96, 128, 192]
 
         device = "cuda:0"
@@ -39,12 +40,16 @@ for take_max in [False, True]:
                 im[duplicate_threshold].append([])
 
             for k in tqdm(ks):
-                if use_flop_matched:
+                if num_experts == 1:
+                    ae = AutoEncoderTopK.from_pretrained(f"../dictionaries/topk/k{k}/ae.pt", k=k, device=device)
+                elif use_flop_matched:
                     ae = SwitchAutoEncoder.from_pretrained(f"../dictionaries/flop-matched/{num_experts}_experts/k{k}/ae.pt", k=k, experts=num_experts, device=device)
                 else:
                     ae = SwitchAutoEncoder.from_pretrained(f"../dictionaries/fixed-width/{num_experts}_experts/k{k}/ae.pt", k=k, experts=num_experts, device=device)
 
-                normalized_weights = ae.encoder.weight / ae.encoder.weight.norm(dim=-1, keepdim=True)
+
+
+                normalized_weights = ae.decoder.data / ae.decoder.data.norm(dim=-1, keepdim=True)
 
                 batch_size = 10000
 
