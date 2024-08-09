@@ -118,7 +118,7 @@ class SwitchAutoEncoder(Dictionary, nn.Module):
         """
         Load a pretrained autoencoder from a file.
         """
-        state_dict = t.load(path)
+        state_dict = t.load(path, map_location=device)
         dict_size, activation_dim = state_dict['encoder.weight'].shape
         autoencoder = SwitchAutoEncoder(activation_dim, dict_size, k, experts, heaviside)
         autoencoder.load_state_dict(state_dict)
