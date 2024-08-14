@@ -41,6 +41,7 @@ for i, expert_i in enumerate(normalized_experts):
     im.append(row)
 
 plt.imshow(im)
+plt.title("Average max cosine similarity between experts")
 plt.colorbar()
 # %%
 
@@ -107,8 +108,12 @@ for i, expert_i in enumerate(normalized_experts[:num_experts_limit]):
             continue
         max_i_to_j = (expert_i @ expert_j.T).max(dim=-1).values
         axs[i, j].hist(max_i_to_j.cpu().numpy(), bins=100)
+        axs[i, j].set_title(f"Expert {i} to Expert {j}")
 
+plt.tight_layout()
+plt.title("Max cos sims between experts")
 plt.show()
+
 # %%
 
 
