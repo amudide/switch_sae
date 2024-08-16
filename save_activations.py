@@ -83,4 +83,4 @@ print(concatenated_activations.shape, concatenated_tokens.shape)
 # save activations 
 os.makedirs('data', exist_ok=True)
 t.save(concatenated_activations, f'data/gpt2_activations_layer{layer}.pt')
-t.save(concatenated_tokens, f'data/tokens.pt')
+t.save(concatenated_tokens, f'data/gpt2_tokens.pt')
