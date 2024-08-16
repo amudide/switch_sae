@@ -51,9 +51,9 @@ for num_experts in unique_num_experts:
 
         key = (num_experts, k)
 
-        for i in range(0, len(data), batch_size):
-            batch = data[i:i+batch_size].to(device)
-            batch_tokens = tokens[i:i+batch_size].to(device)
+        for batch_start in range(0, len(data), batch_size):
+            batch = data[batch_start:batch_start+batch_size].to(device)
+            batch_tokens = tokens[batch_start:batch_start+batch_size].to(device)
 
             activations = ae.encode(batch)
             dupe_feature_activations = activations[..., feature_index_tensor]
@@ -62,7 +62,7 @@ for num_experts in unique_num_experts:
             for j, feature_index in enumerate(feature_index_tensor):
                 top_activating_indices = top_activating.indices[:, j]
                 top_activating_values = top_activating.values[:, j]
-                top_activating_contexts = top_activating_indices // ctx_len
+                top_activating_contexts = top_activating_indices // ctx_len + batch_start
                 top_activating_token_ids = top_activating_indices % ctx_len
                 feature_index_to_topk_activating[feature_index.item()].extend(list(zip(top_activating_contexts.cpu().numpy(), top_activating_token_ids.cpu().numpy(), top_activating_values.cpu().numpy())))
 
@@ -81,15 +81,14 @@ for num_experts in unique_num_experts:
 # Load the top activating for duplicates
 ae_details_to_top_activating = torch.load(save_location, map_location=device)
 
-output_file = "../data/top_activating_for_dupes_layer8.txt"
-
 context_limit = 15
 
 # Load GPT2 tokenizer
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
 for (num_experts, k), feature_index_to_topk_activating in ae_details_to_top_activating.items():
-    with open(output_file, 'a') as f:
+    output_file = f"../data/top_activating_for_dupes_layer8_num-experts{num_experts}_topk{k}.txt"
+    with open(output_file, 'w') as f:
         f.write(f"--------------- NUM EXPERTS = {num_experts}, K = {k} ---------------\n\n\n")
         for feature_index, (top_activating, num_dupes) in feature_index_to_topk_activating.items():
             f.write(f"feature {feature_index} with {num_dupes} dupes:\n")
