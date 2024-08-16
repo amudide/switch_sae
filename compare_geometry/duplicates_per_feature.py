@@ -12,10 +12,7 @@ import torch
 import numpy as np
 from tqdm import tqdm
 import os
-from sae_lens import SAE
-import urllib.parse
-import json
-import webbrowser
+import pandas as pd
 
 
 os.makedirs("plots/compare_geometry", exist_ok=True)
@@ -35,6 +32,8 @@ threshold = 0.9
 intra_sae_max_sims = {}
 
 fig, axs = plt.subplots(len(experts), len(ks), figsize=(20, 10))
+
+data = []
 
 for i, num_experts in enumerate(experts):
 
@@ -58,6 +57,10 @@ for i, num_experts in enumerate(experts):
 
         ax.set_title(f"{num_experts} experts, k={k}")
 
+        for feature_index, num_dupes in enumerate(num_dupes):
+            if num_dupes == 0:
+                continue
+            data.append((num_experts, k, feature_index, num_dupes))
 
 fig.suptitle(f"Number of duplicates per feature, threshold={threshold}")
 
@@ -68,3 +71,11 @@ fig.supylabel("Number of features")
 plt.tight_layout()
 
 plt.savefig("plots/compare_geometry/num_duplicates_per_feature_fixed_width.png")
+
+df = pd.DataFrame(data, columns=["num_experts", "k", "feature_index", "num_dupes"])
+
+# Sort by num_experts, then k, then num_dupes in descending order
+df = df.sort_values(by=["num_experts", "k", "num_dupes"], ascending=[True, True, False])
+
+os.makedirs("../data", exist_ok=True)
+df.to_csv("../data/duplicates.csv", index=False)
