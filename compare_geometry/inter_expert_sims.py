@@ -18,6 +18,8 @@ device = "cuda:0"
 
 def save_fig(ks, num_experts):
 
+    assert len(ks) == 8
+
     lower_lim = 0.2
 
     experts_to_upper_lim = {
@@ -38,12 +40,17 @@ def save_fig(ks, num_experts):
     tick_jump = num_experts // 16
 
     # Create two imshow columns as subplots, one with normalized_switch_experts and one with normalized_normal_experts
-    fig, axs = plt.subplots(len(ks), 2, figsize=(10, 5 * len(ks)))
+    fig, axs = plt.subplots(4, 4, figsize=(15, 15))
 
     # Left plots
     for i, k in enumerate(ks):
 
-        ax = axs[i]
+        if i < 4:
+            ax0 = axs[0, i]
+            ax1 = axs[2, i]
+        elif i < 8:
+            ax0 = axs[1, i - 4]
+            ax1 = axs[3, i - 4]
 
         ae_switch = SwitchAutoEncoder.from_pretrained(f"../dictionaries/fixed-width/{num_experts}_experts/k{k}/ae.pt", k=k, experts=num_experts, device=device)
 
@@ -68,18 +75,18 @@ def save_fig(ks, num_experts):
                 average_max = max_i_to_j.mean()
                 row.append(average_max.cpu().numpy())
             im.append(row)
-        ax[0].imshow(im, vmin=lower_lim, vmax=upper_lim)
-        ax[0].set_title(f"Switch SAE, k={k}")
-        ax[0].set_xlabel("Expert")
-        ax[0].set_ylabel("Expert")
-        ax[0].set_xticks(np.arange(0, num_experts, tick_jump))
-        ax[0].set_yticks(np.arange(0, num_experts, tick_jump))
-        ax[0].set_xticklabels(np.arange(0, num_experts, tick_jump))
-        ax[0].set_yticklabels(np.arange(0, num_experts, tick_jump))
+        ax0.imshow(im, vmin=lower_lim, vmax=upper_lim)
+        ax0.set_title(f"Switch SAE, k={k}")
+        ax0.set_xlabel("Expert")
+        ax0.set_ylabel("Expert")
+        ax0.set_xticks(np.arange(0, num_experts, tick_jump))
+        ax0.set_yticks(np.arange(0, num_experts, tick_jump))
+        ax0.set_xticklabels(np.arange(0, num_experts, tick_jump))
+        ax0.set_yticklabels(np.arange(0, num_experts, tick_jump))
 
-        ax[0].set_xticks(np.arange(-0.5, num_experts), minor=True)
-        ax[0].set_yticks(np.arange(-0.5, num_experts), minor=True)
-        ax[0].grid(color='w', linestyle='-', linewidth=line_width, which='minor')
+        ax0.set_xticks(np.arange(-0.5, num_experts), minor=True)
+        ax0.set_yticks(np.arange(-0.5, num_experts), minor=True)
+        ax0.grid(color='w', linestyle='-', linewidth=line_width, which='minor')
 
         # Right plot
         im = []
@@ -95,32 +102,34 @@ def save_fig(ks, num_experts):
                 row.append(average_max.cpu().numpy())
             im.append(row)
         im = np.array(im)
-        ax[1].imshow(im, vmin=lower_lim, vmax=upper_lim)
-        ax[1].set_title(f"Normal SAE, arbitrarily broken into experts, k={k}")
-        ax[1].set_xlabel("Expert")
-        ax[1].set_ylabel("Expert")
-        ax[1].set_xticks(np.arange(0, num_experts, tick_jump))
-        ax[1].set_yticks(np.arange(0, num_experts, tick_jump))
-        ax[1].set_xticklabels(np.arange(0, num_experts, tick_jump))
-        ax[1].set_yticklabels(np.arange(0, num_experts, tick_jump))
+        ax1.imshow(im, vmin=lower_lim, vmax=upper_lim)
+        ax1.set_title(f"Normal SAE (arbitrary experts), k={k}")
+        ax1.set_xlabel("Expert")
+        ax1.set_ylabel("Expert")
+        ax1.set_xticks(np.arange(0, num_experts, tick_jump))
+        ax1.set_yticks(np.arange(0, num_experts, tick_jump))
+        ax1.set_xticklabels(np.arange(0, num_experts, tick_jump))
+        ax1.set_yticklabels(np.arange(0, num_experts, tick_jump))
 
-        ax[1].set_xticks(np.arange(-0.5, num_experts), minor=True)
-        ax[1].set_yticks(np.arange(-0.5, num_experts), minor=True)
-        ax[1].grid(color='w', linestyle='-', linewidth=line_width, which='minor')
+        ax1.set_xticks(np.arange(-0.5, num_experts), minor=True)
+        ax1.set_yticks(np.arange(-0.5, num_experts), minor=True)
+        ax1.grid(color='w', linestyle='-', linewidth=line_width, which='minor')
 
     plt.suptitle(f"Average max cosine similarity between experts, {num_experts} experts", fontsize=16, y=1)
     plt.tight_layout()
 
     # Add vertical color bar with adjustable width
-    fig.colorbar(axs[0][0].imshow(im, vmin=lower_lim, vmax=upper_lim), ax=axs, orientation='vertical', fraction=0.05)
+    fig.colorbar(axs[0][0].imshow(im, vmin=lower_lim, vmax=upper_lim), ax=axs, orientation='vertical', fraction=0.03)
 
-    # plt.savefig(f"plots/compare_geometry/inter_expert_sims_{num_experts}.png", bbox_inches='tight')
-    # plt.close()
+    # Add a bold line between the first two rows and the last two rows
+    line = plt.Line2D((0.05, 0.9), (0.49, 0.49), color='black', linewidth=5)
+    fig.add_artist(line)
 
-    plt.show()
+    plt.savefig(f"plots/compare_geometry/inter_expert_sims_{num_experts}.png", bbox_inches='tight')
+    plt.close()
 
-# experts = [16, 32, 64, 128]
-experts = [16]
+
+experts = [16, 32, 64, 128]
 ks = [8, 16, 32, 48, 64, 96, 128, 192]
 
 for num_experts in experts:
