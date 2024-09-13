@@ -23,9 +23,9 @@ import argparse
 # from config import lm, activation_dim, layer, hf, steps, n_ctxs
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--num_experts", nargs="+", type=int, required=True)
-parser.add_argument("--lb_alpha", nargs="+", type=float, default=3.0)
-parser.add_argument("--heaviside", nargs="+", type=str2bool, default=False)
+parser.add_argument("--num_experts", type=int, defualt=8, required=True)
+parser.add_argument("--lb_alpha", type=float, default=3.0)
+parser.add_argument("--heaviside", type=str2bool, default=False)
 args = parser.parse_args()
 
 lm = 'openai-community/gpt2'
