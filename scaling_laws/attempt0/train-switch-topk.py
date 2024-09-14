@@ -23,7 +23,7 @@ import argparse
 # from config import lm, activation_dim, layer, hf, steps, n_ctxs
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--num_experts", type=int, defualt=8, required=True)
+parser.add_argument("--num_experts", type=int, default=8, required=True)
 parser.add_argument("--lb_alpha", type=float, default=3.0)
 parser.add_argument("--heaviside", type=str2bool, default=False)
 args = parser.parse_args()
