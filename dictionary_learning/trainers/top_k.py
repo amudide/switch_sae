@@ -76,6 +76,8 @@ class AutoEncoderTopK(Dictionary, nn.Module):
         f = f.view(*x.shape[:-1], f.shape[-1])
         if not output_features:
             return x_hat
+        elif output_features == "all":
+            return x_hat, f, top_acts, top_indices
         else:
             return x_hat, f
         

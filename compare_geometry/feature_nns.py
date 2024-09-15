@@ -28,7 +28,7 @@ for take_max in [False, True]:
             experts = [1, 16, 32, 64, 128]
             ks = [8, 16, 32, 48, 64, 96, 128, 192]
 
-        device = "cuda:0"
+        device = "cuda:1"
         # device = "cpu"
 
         im = {duplicate_threshold: [] for duplicate_threshold in duplicate_thresholds}
@@ -88,7 +88,7 @@ for take_max in [False, True]:
                 ax.set_title(f"{num_experts} experts, k={k}")
 
         plt.tight_layout()
-        plt.savefig(f"plots/compare_geometry/intra_sae_max_sims_hist_{description_str}.png")
+        plt.savefig(f"plots/compare_geometry/intra_sae_max_sims_hist_{description_str}.pdf")
         plt.close()
 
 
@@ -106,7 +106,7 @@ for take_max in [False, True]:
         plt.xlabel("k")
         plt.ylabel("# experts")
         plt.title(f"Average intra-SAE max cosine similarity")
-        plt.savefig(f"plots/compare_geometry/intra_sae_max_sims_{description_str}.png")
+        plt.savefig(f"plots/compare_geometry/intra_sae_max_sims_{description_str}.pdf")
         plt.close()
 
         # Plots dupes
@@ -144,7 +144,7 @@ for take_max in [False, True]:
         else:
             fig.suptitle(f"Fixed width")
         plt.tight_layout()
-        plt.savefig(f"plots/compare_geometry/feature_dupes_{description_str}_{'feature-wise' if take_max else 'feature-pair-wise'}.png")
+        plt.savefig(f"plots/compare_geometry/feature_dupes_{description_str}_{'feature-wise' if take_max else 'feature-pair-wise'}.pdf")
         plt.close()
 
 # %%

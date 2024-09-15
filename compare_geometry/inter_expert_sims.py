@@ -125,7 +125,7 @@ def save_fig(ks, num_experts):
     line = plt.Line2D((0.05, 0.9), (0.49, 0.49), color='black', linewidth=5)
     fig.add_artist(line)
 
-    plt.savefig(f"plots/compare_geometry/inter_expert_sims_{num_experts}.png", bbox_inches='tight')
+    plt.savefig(f"plots/compare_geometry/inter_expert_sims_{num_experts}.pdf", bbox_inches='tight')
     plt.close()
 
 

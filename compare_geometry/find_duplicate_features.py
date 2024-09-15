@@ -70,7 +70,7 @@ fig.supylabel("Number of features")
 
 plt.tight_layout()
 
-plt.savefig("plots/compare_geometry/num_duplicates_per_feature_fixed_width.png")
+plt.savefig("plots/compare_geometry/num_duplicates_per_feature_fixed_width.pdf")
 
 df = pd.DataFrame(data, columns=["num_experts", "k", "feature_index", "num_dupes"])
 
