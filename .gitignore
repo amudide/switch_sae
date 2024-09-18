@@ -172,3 +172,6 @@ plots
 
 # data
 data
+
+# Pytorch bins
+*.pt
