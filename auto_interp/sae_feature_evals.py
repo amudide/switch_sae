@@ -1,10 +1,18 @@
 # %%
+import os
+import sys
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
 
 from functools import partial
 from nnsight import LanguageModel
 import asyncio
 
+from dictionary_learning.trainers.switch import SwitchAutoEncoder
+from dictionary_learning.trainers.top_k import AutoEncoderTopK
+
 import torch
+import einops
+import os
 
 from functools import partial
 
@@ -16,6 +24,7 @@ from sae_auto_interp.autoencoders.OpenAI import Autoencoder
 
 
 from sae_auto_interp.features import FeatureCache
+from sae_auto_interp.features.features import FeatureRecord
 from sae_auto_interp.utils import load_tokenized_data
 
 
@@ -31,16 +40,20 @@ import pickle
 
 from sae_auto_interp.clients import OpenRouter, Local
 from sae_auto_interp.utils import display
+import argparse
 
 # %%
 
-WIDTH = 131_072
 CTX_LEN = 128
-BATCH_SIZE = 32
-N_TOKENS = 5_000_000
+BATCH_SIZE = 128
+N_TOKENS = 10_000_000
 N_SPLITS = 2
-RAW_ACTIVATIONS_DIR = "/media/jengels/sda/switch/gpt2"
+NUM_FEATURES_TO_TEST = 1000
 
+device = "cuda:1"
+
+# Set torch seed
+torch.manual_seed(0)
 
 # %%
 
@@ -56,18 +69,38 @@ try:
 except:
     is_notebook = False
 
+if not is_notebook:
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--sae_path", type=str, required=True)
+    argparser.add_argument("--to_do", type=str, required=True, choices=["generate", "eval", "both"])
+
+    args = argparser.parse_args()
+    SAE_PATH = args.sae_path
+    to_do = args.to_do
+else:
+    SAE_PATH = "dictionaries/topk/k64"
+    to_do = "both"
+    # SAE_PATH = "dictionaries/fixed-width/16_experts/k64"
+
+RAW_ACTIVATIONS_DIR = f"/media/jengels/sda/switch/{SAE_PATH}"
+SAVE_FILE = f"/media/jengels/sda/switch/{SAE_PATH}/results.pkl"
+
 # %%
 
-device = "cuda:1"
 
-path = "/home/jengels/switch_sae/8.pt" # Change this line to your weights location.
-state_dict = torch.load(path)
-ae = Autoencoder.from_state_dict(state_dict=state_dict)
+if "topk" in SAE_PATH:
+    k = int(SAE_PATH.split("/")[-1][1:])
+    ae = AutoEncoderTopK.from_pretrained(f"{SAE_PATH}/ae.pt", k=k, device=device)
+else:
+    num_experts = int(SAE_PATH.split("/")[-2].split("_")[0])
+    k = int(SAE_PATH.split("/")[-1][1:])
+    ae = SwitchAutoEncoder.from_pretrained(f"{SAE_PATH}/ae.pt", k=k, experts=num_experts, device=device)
+
 ae.to(device)
 
 model = LanguageModel("openai-community/gpt2", device_map=device, dispatch=True)
 
-
+# TODO: Ideally use openwebtext
 tokens = load_tokenized_data(
     CTX_LEN,
     model.tokenizer,
@@ -77,13 +110,24 @@ tokens = load_tokenized_data(
 
 # %%
 
-generate = False
 
+WIDTH = ae.dict_size
+# Get NUM_FEATURES_TO_TEST random features to test without replacement
+random_features = torch.randperm(WIDTH)[:NUM_FEATURES_TO_TEST]
+
+# %%
+
+generate = to_do in ["generate", "both"]
 if generate:
 
     def _forward(ae, x):
-        latents, _ = ae.encode(x)
-        return latents
+        _, _, top_acts, top_indices = ae.forward(x, output_features="all")
+
+        expanded = torch.zeros(top_acts.shape[0], WIDTH, device=device)
+        expanded.scatter_(1, top_indices, top_acts)
+
+        expanded = einops.rearrange(expanded, "(b c) w -> b c w", b=x.shape[0], c=x.shape[1])
+        return expanded
 
     # We can simply add the new module as an attribute to an existing
     # submodule on GPT-2's module tree.
@@ -91,7 +135,7 @@ if generate:
     submodule.ae = AutoencoderLatents(
         ae, 
         partial(_forward, ae),
-        width=WIDTH
+        width=ae.dict_size
     )
 
     with model.edit(" ", inplace=True):
@@ -104,7 +148,7 @@ if generate:
     module_path = submodule.path
 
     submodule_dict = {module_path : submodule}
-    module_filter = {module_path : torch.arange(WIDTH // 10).to(device)}
+    module_filter = {module_path : random_features.to(device)}
 
     cache = FeatureCache(
         model, 
@@ -124,7 +168,7 @@ if generate:
 
 
 cfg = FeatureConfig(
-    width = 131_072,
+    width = WIDTH,
     min_examples = 200,
     max_examples = 2_000,
     example_ctx_len = CTX_LEN,
@@ -142,7 +186,12 @@ dataset = FeatureDataset(
 )
 # %%
 
-# Define this here so we don't need to edit the constructor function in the git submodule
+if to_do == "generate":
+    exit()
+
+# %%
+
+# Define these functions here so we don't need to edit the functions in the git submodule
 def default_constructor(
     record,
     tokens,
@@ -177,22 +226,42 @@ sampler = partial(
     sample,
     cfg=sample_cfg
 )
+
+
+def load(
+    dataset,
+    constructor,
+    sampler,
+    transform = None
+):
+    def _process(buffer_output):
+        record = FeatureRecord(buffer_output.feature)
+        if constructor is not None:
+            constructor(record=record, buffer_output=buffer_output)
+
+        if sampler is not None:
+            sampler(record)
+
+        if transform is not None:
+            transform(record)
+
+        return record
+
+    for buffer in dataset.buffers:
+        for data in buffer:
+            if data is not None:
+                yield _process(data)
 # %%
 
-record_iterator = dataset.load(constructor=constructor, sampler=sampler)
+record_iterator = load(constructor=constructor, sampler=sampler, dataset=dataset, transform=None)
 
-# %%
+# next_record = next(record_iterator)
 
-
-next_record = next(record_iterator)
-
-display(next_record, model.tokenizer, n=5)
+# display(next_record, model.tokenizer, n=5)
 # %%
 
 # Command to run: vllm serve hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4 --max_model_len 10000 --tensor-parallel-size 2
 client = Local("hugging-quants/Meta-Llama-3.1-70B-Instruct-AWQ-INT4")
-
-# client = OpenRouter("meta-llama/llama-3.1-70b-instruct", api_key="INSERT_API_KEY_HERE")
 
 # %%
 
@@ -200,7 +269,6 @@ async def run_async():
 
     global record_iterator
 
-    save_file = "gpt2_layer_8_openai_feature_scores.pkl"
 
     positive_scores = []
     negative_scores = []
@@ -210,7 +278,7 @@ async def run_async():
     total_negative_score = 0
     total_evaluated = 0
 
-    bar = tqdm(record_iterator)
+    bar = tqdm(record_iterator, total=NUM_FEATURES_TO_TEST)
 
 
 
@@ -241,7 +309,6 @@ async def run_async():
 
 
         score = await scorer(record)
-        # score = asyncio.run(scorer(record))
 
         quantile_positives = [0 for _ in range(11)]
         quantile_totals = [0 for _ in range(11)]
@@ -257,10 +324,6 @@ async def run_async():
                 negative_totals += 1
                 if score_instance.prediction == 1:
                     negative_positives += 1
-                    
-        # print(quantile_positives, quantile_totals)
-        # print(negative_positives / negative_totals)
-        # print(sum(quantile_positives) / sum(quantile_totals))   
 
         positive_scores.append((quantile_positives, quantile_totals))
         negative_scores.append((negative_positives, negative_totals))
@@ -281,12 +344,11 @@ async def run_async():
         feature_ids.append(record.feature.feature_index) 
         
 
-        with open(save_file, "wb") as f:
+        with open(SAVE_FILE, "wb") as f:
             pickle.dump((positive_scores, negative_scores, explanations, feature_ids), f)
 
-if is_notebook:
-    run_async()
-else:
-    asyncio.run(run_async())
+# Switch comment when running in notebook/command line
+# await run_async()
+asyncio.run(run_async())
 
 # %%
