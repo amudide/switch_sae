@@ -44,6 +44,13 @@ import argparse
 
 # %%
 
+# Change dir to folder one level up from this file
+this_dir = os.path.dirname(os.path.abspath(__file__))
+one_level_up = os.path.dirname(this_dir)
+os.chdir(one_level_up)
+
+# %%
+
 CTX_LEN = 128
 BATCH_SIZE = 128
 N_TOKENS = 10_000_000
@@ -84,6 +91,7 @@ else:
 
 RAW_ACTIVATIONS_DIR = f"/media/jengels/sda/switch/{SAE_PATH}"
 SAVE_FILE = f"/media/jengels/sda/switch/{SAE_PATH}/results.pkl"
+FINAL_SAVE_FILE = f"/media/jengels/sda/switch/{SAE_PATH}/final_results.pkl"
 
 # %%
 
@@ -346,6 +354,10 @@ async def run_async():
 
         with open(SAVE_FILE, "wb") as f:
             pickle.dump((positive_scores, negative_scores, explanations, feature_ids), f)
+
+    with open(FINAL_SAVE_FILE, "wb") as f:
+        pickle.dump((positive_scores, negative_scores, explanations, feature_ids), f)
+
 
 # Switch comment when running in notebook/command line
 # await run_async()

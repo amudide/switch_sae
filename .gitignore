@@ -169,6 +169,7 @@ switch
 
 # plots
 plots
+*.png
 
 # data
 data
