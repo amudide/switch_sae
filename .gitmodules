@@ -1,0 +1,3 @@
+[submodule "sae-auto-interp"]
+	path = sae-auto-interp
+	url = https://github.com/EleutherAI/sae-auto-interp/

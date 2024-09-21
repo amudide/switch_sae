@@ -125,7 +125,48 @@ def save_fig(ks, num_experts):
     line = plt.Line2D((0.05, 0.9), (0.49, 0.49), color='black', linewidth=5)
     fig.add_artist(line)
 
-    plt.savefig(f"plots/compare_geometry/inter_expert_sims_{num_experts}.png", bbox_inches='tight')
+    plt.savefig(f"plots/compare_geometry/inter_expert_sims_{num_experts}.pdf", bbox_inches='tight')
+    plt.close()
+
+    # Plot just k = 64 and switch experts for the paper
+    k = 64
+    ae_switch = SwitchAutoEncoder.from_pretrained(f"../dictionaries/fixed-width/{num_experts}_experts/k{k}/ae.pt", k=k, experts=num_experts, device=device)
+    
+    switch_experts = einops.rearrange(ae_switch.decoder.data, "(experts n) d -> experts n d", experts=num_experts)
+    normalized_switch_experts = switch_experts / switch_experts.norm(dim=-1, keepdim=True)
+    
+    fig, ax = plt.subplots(figsize=(5, 4))
+    
+    im = []
+    for i, expert_i in enumerate(normalized_switch_experts):
+        row = []
+        for j, expert_j in enumerate(normalized_switch_experts):
+            if i == j:
+                row.append(np.nan)
+                continue
+            
+            max_i_to_j = (expert_i @ expert_j.T).max(dim=-1).values
+            average_max = max_i_to_j.mean()
+            row.append(average_max.cpu().numpy())
+        im.append(row)
+    
+    cax = ax.imshow(im, vmin=lower_lim, vmax=upper_lim)
+    # ax.set_title(f"Switch SAE, k={k}, {num_experts} experts")
+    ax.set_xlabel("Expert")
+    ax.set_ylabel("Expert")
+    ax.set_xticks(np.arange(0, num_experts, tick_jump))
+    ax.set_yticks(np.arange(0, num_experts, tick_jump))
+    ax.set_xticklabels(np.arange(0, num_experts, tick_jump))
+    ax.set_yticklabels(np.arange(0, num_experts, tick_jump))
+    
+    ax.set_xticks(np.arange(-0.5, num_experts), minor=True)
+    ax.set_yticks(np.arange(-0.5, num_experts), minor=True)
+    ax.grid(color='w', linestyle='-', linewidth=line_width, which='minor')
+    
+    plt.colorbar(cax, ax=ax, fraction=0.046, pad=0.04)
+    
+    plt.tight_layout()
+    plt.savefig(f"plots/compare_geometry/inter_expert_sims_{num_experts}_k64_switch.pdf", bbox_inches='tight')
     plt.close()
 
 

@@ -15,7 +15,8 @@ torch.set_grad_enabled(False)
 
 # %%
 
-device = "cuda:0"
+# device = "cuda:0"
+device = "cpu"
 duplicate_features = pd.read_csv('../data/duplicates.csv')
 data = torch.load("../data/gpt2_activations_layer8.pt", map_location=device)
 tokens = torch.load("../data/gpt2_tokens.pt", map_location=device)
@@ -55,10 +56,12 @@ for num_experts in unique_num_experts:
             batch = data[batch_start:batch_start+batch_size].to(device)
             batch_tokens = tokens[batch_start:batch_start+batch_size].to(device)
 
-            activations = ae.encode(batch)
+            top_acts, top_indices = ae.forward(batch, output_features="all")[2:]
+            activations = torch.zeros(batch_tokens.shape[0] * batch_tokens.shape[1], len(ae.decoder), device=device)
+
+            activations.scatter_(1, top_indices, top_acts)
             dupe_feature_activations = activations[..., feature_index_tensor]
-            flattened_activations = einops.rearrange(dupe_feature_activations, 'b c d -> (b c) d')                    
-            top_activating = torch.topk(flattened_activations, store_topk_activating, dim=0)
+            top_activating = torch.topk(dupe_feature_activations, store_topk_activating, dim=0)
             for j, feature_index in enumerate(feature_index_tensor):
                 top_activating_indices = top_activating.indices[:, j]
                 top_activating_values = top_activating.values[:, j]
@@ -86,12 +89,32 @@ context_limit = 15
 # Load GPT2 tokenizer
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
-for (num_experts, k), feature_index_to_topk_activating in ae_details_to_top_activating.items():
+for (num_experts, k), feature_index_to_topk_activating in tqdm(ae_details_to_top_activating.items()):
     output_file = f"../data/top_activating_for_dupes_layer8_num-experts{num_experts}_topk{k}.txt"
+    
+    if num_experts == 1:
+        ae = AutoEncoderTopK.from_pretrained(f"../dictionaries/topk/k{k}/ae.pt", k=k, device=device)
+    else:
+        ae = SwitchAutoEncoder.from_pretrained(f"../dictionaries/fixed-width/{num_experts}_experts/k{k}/ae.pt", k=k, experts=num_experts, device=device)
+
+    decoder_vecs = ae.decoder
+    decoder_vecs = decoder_vecs / decoder_vecs.norm(dim=-1, keepdim=True)
+    sims = decoder_vecs @ decoder_vecs.T
+    threshold = 0.9
+    # Zero diagonal of sims
+    sims.fill_diagonal_(0)
+
+    encoder_vecs = ae.encoder.weight
+    encoder_vecs = encoder_vecs / encoder_vecs.norm(dim=-1, keepdim=True)
+    encoder_sims = encoder_vecs @ encoder_vecs.T
+    
     with open(output_file, 'w') as f:
         f.write(f"--------------- NUM EXPERTS = {num_experts}, K = {k} ---------------\n\n\n")
         for feature_index, (top_activating, num_dupes) in feature_index_to_topk_activating.items():
-            f.write(f"feature {feature_index} with {num_dupes} dupes:\n")
+            similar = torch.nonzero(sims[feature_index] > threshold).flatten().cpu().numpy()
+            nonzero_sims = sims[feature_index][similar].cpu().numpy()
+            this_encoder_sims = encoder_sims[feature_index][similar].cpu().numpy()
+            f.write(f"feature {feature_index} with {num_dupes} dupes: {similar}, {nonzero_sims}, {this_encoder_sims}\n")
             for context_index, token_index, value in top_activating:
                 context_start = max(0, token_index - context_limit)
                 context_end = min(token_index, ctx_len)
@@ -99,7 +122,12 @@ for (num_experts, k), feature_index_to_topk_activating in ae_details_to_top_acti
                 token_context_strs = [tokenizer.decode(token) for token in token_context]
                 context = "".join(token_context_strs)
                 context = context.replace("\n", " ")
-                f.write(f"{value:.4f}: {context}\n")
+                if context_end + 1 < ctx_len:
+                    next_token = tokenizer.decode(tokens[context_index][context_end: context_end + 1][0])
+                    next_token = next_token.replace("\n", "<new line>")
+                else:
+                    next_token = ""
+                f.write(f"{value:.4f} {next_token}\n{context}\n")
             f.write("\n")
         f.write("\n")
 # %%

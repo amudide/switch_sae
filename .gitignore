@@ -169,6 +169,16 @@ switch
 
 # plots
 plots
+*.png
 
 # data
 data
+
+# Pytorch bins
+*.pt
+
+# Pickle filees
+*.pkl
+
+# Generated shell files
+auto_interp/*.sh
