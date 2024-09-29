@@ -284,7 +284,7 @@ ax.set_xlim(0, num_experts)
 ax.set_ylim(0, num_experts)
 
 bar = plt.colorbar(cax, ax=ax, fraction=0.046, pad=0.04)
-bar.set_label("Average max similarity", size=8)
+# bar.set_label("Average max similarity", size=8)
 bar.ax.tick_params(labelsize=6)
 
 plt.savefig("plots/compare_geometry/inter_expert_sims_16.pdf", bbox_inches='tight', pad_inches=0.02)
@@ -295,8 +295,8 @@ experts = [1, 16, 32, 64, 128]
 
 # Common parameters
 figsize = (5.5/3, 2)
-font_size_small = 4
-font_size_medium = 6
+font_size_small = 6
+font_size_medium = 6.5
 font_size_large = 8
 gap = 0.05
 
@@ -327,14 +327,16 @@ def create_heatmap(ax, data, x_labels, y_labels, xlabel, ylabel, vmin=None, vmax
 
 # First plot
 fig1, ax1 = plt.subplots(figsize=figsize)
-cax1 = create_heatmap(ax1, image_1, ks, experts, "k", "# experts")
+cax1 = create_heatmap(ax1, image_1, ks, experts, "Sparsity (L0)", "# Experts")
 bar1 = plt.colorbar(cax1, ax=ax1, fraction=0.046, pad=0.04)
 bar1.ax.tick_params(labelsize=font_size_medium)
-plt.savefig("plots/heatmap1.pdf", bbox_inches='tight', pad_inches=0.02)
+plt.savefig("plots/compare_geometry/averaeg_inter_SAE_sim.pdf", bbox_inches='tight', pad_inches=0.02)
 
 # Second plot
 fig2, ax2 = plt.subplots(figsize=figsize)
-cax2 = create_heatmap(ax2, image_2, ks, experts, "k", "# experts")
+cax2 = create_heatmap(ax2, image_2, ks, experts, "Sparsity (L0)", "# Experts")
 bar2 = plt.colorbar(cax2, ax=ax2, fraction=0.046, pad=0.04)
 bar2.ax.tick_params(labelsize=font_size_medium)
-plt.savefig("plots/heatmap2.pdf", bbox_inches='tight', pad_inches=0.02)
+plt.savefig("plots/compare_geometry/frac_nns_greater_than_0.9.pdf", bbox_inches='tight', pad_inches=0.02)
+
+# %%
