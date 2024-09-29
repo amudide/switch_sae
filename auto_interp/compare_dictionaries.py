@@ -63,14 +63,14 @@ def process_results(results, dictionary):
     ]
     ci_negative = confidence_interval(total_negative_correct, total_negative)
 
-    x = ["Negative"] + ["Q" + str(i) for i in range(1, 11)]
+    x = ["Not"] + ["Q" + str(i) for i in range(1, 11)]
     y = [1 - average_negative] + average_per_quantile[::-1]
     ci = [ci_negative] + ci_per_quantile[::-1]
 
     return x, y, ci, dictionary
 
 # Create two subplots with the new figure size
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5, 2.5))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5, 2))
 
 topk_data = None
 
@@ -110,14 +110,18 @@ for ax in (ax1, ax2):
     
     # Set y-axis limits and ticks
     ax.set_ylim(0.2, 1.0)  # Adjust these values as needed
-    # ax.set_yticks([0.9, 0.95, 1.0])
-    # ax.set_yticklabels(["0.9", "0.95", "1.0"])
     
     # Adjust tick label size
     ax.tick_params(axis='both', labelsize=8)
     
     # Remove minor ticks
     ax.minorticks_off()
+
+    # Tilt all x-axis labels
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(45)
+        tick.set_va('top')
+    
 
 # Turn off ticks on y axis of ax2
 ax2.yaxis.set_ticks_position('none')
@@ -128,7 +132,6 @@ ax2.set_ylabel('')
 ax1.set_title("Flop Matched", fontsize=10)
 ax2.set_title("Fixed Width", fontsize=10)
 
-plt.tight_layout(pad=0.3)
 os.makedirs("plots", exist_ok=True)
-plt.savefig("plots/detection_split.pdf")
+plt.savefig("plots/detection_split.pdf", bbox_inches='tight')
 plt.show()
