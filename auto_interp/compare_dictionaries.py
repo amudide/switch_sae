@@ -29,6 +29,7 @@ dictionaries = [
     "dictionaries/fixed-width/128_experts/k64",
     "dictionaries/flop-matched/2_experts/k64",
     "dictionaries/flop-matched/4_experts/k64",
+    "dictionaries/flop-matched/8_experts/k64",
 ]
 paths = [f"/media/jengels/sda/switch/{dictionary}" for dictionary in dictionaries]
 results = [pickle.load(open(f"{path}/results.pkl", "rb")) for path in paths]
@@ -103,16 +104,16 @@ for results, dictionary in zip(results, dictionaries):
         ax.errorbar(x, y, yerr=ci, fmt='-o', capsize=5, label=label_name, color=color, markersize=5)
 
 for ax in (ax1, ax2):
-    ax.set_xlabel("Quantiles", fontsize=10)
-    ax.set_ylabel('Accuracy', fontsize=10)
+    ax.set_xlabel("Quantiles", fontsize=8)
+    ax.set_ylabel('Accuracy', fontsize=8)
     ax.grid(True, which="both", ls="--", linewidth=0.5)
-    ax.legend(loc='upper center', prop={'size': 6})
+    ax.legend(loc='upper center', prop={'size': 5.5})
     
     # Set y-axis limits and ticks
     ax.set_ylim(0.2, 1.0)  # Adjust these values as needed
     
     # Adjust tick label size
-    ax.tick_params(axis='both', labelsize=8)
+    ax.tick_params(axis='both', labelsize=6.5)
     
     # Remove minor ticks
     ax.minorticks_off()
@@ -129,9 +130,10 @@ ax2.yaxis.set_tick_params(size=0)
 ax2.yaxis.set_ticklabels([])
 ax2.set_ylabel('')
 
-ax1.set_title("Flop Matched", fontsize=10)
-ax2.set_title("Fixed Width", fontsize=10)
+ax1.set_title("Flop Matched", fontsize=9)
+ax2.set_title("Fixed Width", fontsize=9)
 
 os.makedirs("plots", exist_ok=True)
 plt.savefig("plots/detection_split.pdf", bbox_inches='tight')
 plt.show()
+# %%
