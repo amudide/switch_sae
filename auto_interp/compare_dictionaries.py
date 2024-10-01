@@ -31,8 +31,7 @@ dictionaries = [
     "dictionaries/flop-matched/4_experts/k64",
     "dictionaries/flop-matched/8_experts/k64",
 ]
-paths = [f"/media/jengels/sda/switch/{dictionary}" for dictionary in dictionaries]
-results = [pickle.load(open(f"{path}/results.pkl", "rb")) for path in paths]
+results = pickle.load(open("results.pkl", "rb"))
 
 def confidence_interval(successes, total, z=1.96):
     p = successes / total
