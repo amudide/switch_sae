@@ -179,6 +179,7 @@ data
 
 # Pickle filees
 *.pkl
+!auto_interp/*.pkl
 
 # Generated shell files
 auto_interp/*.sh

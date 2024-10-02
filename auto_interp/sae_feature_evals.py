@@ -52,7 +52,7 @@ os.chdir(one_level_up)
 # %%
 
 CTX_LEN = 128
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 N_TOKENS = 10_000_000
 N_SPLITS = 2
 NUM_FEATURES_TO_TEST = 1000
