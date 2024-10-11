@@ -70,7 +70,7 @@ def process_results(results, dictionary):
     return x, y, ci, dictionary
 
 # Create two subplots with the new figure size
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5, 2))
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.5, 2.5))
 
 topk_data = None
 
@@ -129,8 +129,8 @@ ax2.yaxis.set_tick_params(size=0)
 ax2.yaxis.set_ticklabels([])
 ax2.set_ylabel('')
 
-ax1.set_title("Flop Matched", fontsize=9)
-ax2.set_title("Fixed Width", fontsize=9)
+ax1.set_title("FLOP-Matched", fontsize=9)
+ax2.set_title("Width-Matched", fontsize=9)
 
 os.makedirs("plots", exist_ok=True)
 plt.savefig("plots/detection_split.pdf", bbox_inches='tight')
