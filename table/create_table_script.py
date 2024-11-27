@@ -11,13 +11,13 @@ devices = [f'cuda:{i}' for i in range(8)]
 # First set of commands for GPT-2
 gpt2_commands = []
 for layer, sae_type, type_ in itertools.product(layers, sae_types, types):
-    cmd = f"python3 table/train_switch_table.py --device cuda:{len(gpt2_commands) % 8} --layer {layer} --lm openai-community/gpt2 --ks 64 --activation_dim 768 --dict_ratio 32 --num_experts 8 --type {type_} --sae_type {sae_type} &"
+    cmd = f"python3 table/train_switch_table.py --device cuda:{len(gpt2_commands) % 8} --layer {layer} --lm openai-community/gpt2 --ks 64 --activation_dim 768 --dict_ratio 32 --num_experts 8 --type {type_} --sae_type {sae_type} --steps 20000 &"
     gpt2_commands.append(cmd)
 
 # Second set of commands for Gemma-2B
 gemma_commands = []
 for i, sae_type in enumerate(sae_types):
-    cmd = f"python3 table/train_switch_table.py --device cuda:{i} --layer 12 --lm google/gemma-2b --ks 64 --activation_dim 2048 --dict_ratio 32 --num_experts 8 --type resid --sae_type {sae_type} &"
+    cmd = f"python3 table/train_switch_table.py --device cuda:{i} --layer 12 --lm google/gemma-2b --ks 64 --activation_dim 2048 --dict_ratio 32 --num_experts 8 --type resid --sae_type {sae_type} --steps 2000000 &"
     gemma_commands.append(cmd)
 
 # Write commands to a bash script
@@ -38,7 +38,7 @@ with open('run_parallel.sh', 'w') as f:
     # Write Gemma commands
     f.write('# Gemma-2B training commands\n')
     for i, cmd in enumerate(gemma_commands):
-        f.write(f'{cmd} &\n')
+        f.write(f'{cmd}\n')
     
     f.write('\nwait\n')  # Wait for all commands to finish
 
