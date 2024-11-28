@@ -3,7 +3,7 @@
 import itertools
 
 # Generate all combinations of parameters
-layers = [2, 4, 8, 10, 12]
+layers = [2, 4, 6, 8, 10]
 sae_types = ['switch', 'topk']
 types = ['resid', 'attn', 'mlp']
 devices = [f'cuda:{i}' for i in range(8)]

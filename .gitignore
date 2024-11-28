@@ -185,3 +185,5 @@ data
 auto_interp/*.sh
 
 other_dictionaries
+
+table/results.csv
