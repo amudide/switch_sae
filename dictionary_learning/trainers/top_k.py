@@ -181,6 +181,8 @@ class TrainerTopK(SAETrainer):
         self.dead_features = -1
         
     def loss(self, x, step=None, logging=False):
+
+        x = x.to(self.device)
         
         # Run the SAE
         f = self.ae.encode(x)
@@ -250,6 +252,8 @@ class TrainerTopK(SAETrainer):
             )
 
     def update(self, step, x):
+
+        x = x.to(self.device)
         
         # Initialise the decoder bias
         if step == 0:

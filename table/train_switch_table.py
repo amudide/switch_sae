@@ -1,6 +1,7 @@
 # %%
 import os
 import sys
+
 # Add the parent directory to the sys path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -21,16 +22,28 @@ from config import hf
 
 # %%
 parser = argparse.ArgumentParser()
-parser.add_argument('--device', type=str, default='cuda:1', help='Device to run on')
-parser.add_argument('--lm', type=str, help='Language model to use')
-parser.add_argument('--layer', type=int, default=12, help='Layer to extract activations from')
-parser.add_argument("--type", type=str, default="resid", choices=["resid", "mlp", "attn"])
-parser.add_argument("--sae_type", type=str, default="switch", choices=["switch", "topk"])
-parser.add_argument('--ks', nargs='+', type=int, default=[64], help='List of k values')
-parser.add_argument('--activation_dim', type=int, default=2048, help='Dimension of activations')
-parser.add_argument('--dict_ratio', type=int, default=32, help='Dictionary size ratio')
-parser.add_argument('--num_experts', nargs='+', type=int, default=[8], help='List of number of experts')
-parser.add_argument("--steps", type=int, default=10000, help="Number of steps to train for")
+parser.add_argument("--device", type=str, default="cuda:1", help="Device to run on")
+parser.add_argument("--lm", type=str, help="Language model to use")
+parser.add_argument(
+    "--layer", type=int, default=12, help="Layer to extract activations from"
+)
+parser.add_argument(
+    "--type", type=str, default="resid", choices=["resid", "mlp", "attn"]
+)
+parser.add_argument(
+    "--sae_type", type=str, default="switch", choices=["switch", "topk"]
+)
+parser.add_argument("--ks", nargs="+", type=int, default=[64], help="List of k values")
+parser.add_argument(
+    "--activation_dim", type=int, default=2048, help="Dimension of activations"
+)
+parser.add_argument("--dict_ratio", type=int, default=32, help="Dictionary size ratio")
+parser.add_argument(
+    "--num_experts", nargs="+", type=int, default=[8], help="List of number of experts"
+)
+parser.add_argument(
+    "--steps", type=int, default=10000, help="Number of steps to train for"
+)
 
 args = parser.parse_args()
 
@@ -82,9 +95,9 @@ buffer = ActivationBuffer(
     submodule,
     d_submodule=activation_dim,
     n_ctxs=n_ctxs,
-    device=device,
+    device="cpu",
     out_batch_size=batch_size,
-    refresh_batch_size=512 if lm == "openai-community/gpt2" else 64
+    refresh_batch_size=512 if lm == "openai-community/gpt2" else 64,
 )
 
 if args.sae_type == "switch":
@@ -118,21 +131,21 @@ if args.sae_type == "switch":
     ]
 else:
     base_trainer_config = {
-        'trainer' : TrainerTopK,
-        'dict_class' : AutoEncoderTopK,
-        'activation_dim' : activation_dim,
-        'dict_size' : args.dict_ratio * activation_dim,
-        'auxk_alpha' : 1/32,
-        'decay_start' : int(steps * 0.8),
-        'steps' : steps,
-        'seed' : 0,
-        'device' : device,
-        'layer' : layer,
-        'lm_name' : lm,
-        'wandb_name' : 'AutoEncoderTopK'
+        "trainer": TrainerTopK,
+        "dict_class": AutoEncoderTopK,
+        "activation_dim": activation_dim,
+        "dict_size": args.dict_ratio * activation_dim,
+        "auxk_alpha": 1 / 32,
+        "decay_start": int(steps * 0.8),
+        "steps": steps,
+        "seed": 0,
+        "device": device,
+        "layer": layer,
+        "lm_name": lm,
+        "wandb_name": "AutoEncoderTopK",
     }
 
-    trainer_configs = [(base_trainer_config | {'k': k}) for k in args.ks]
+    trainer_configs = [(base_trainer_config | {"k": k}) for k in args.ks]
 
 
 wandb.init(
@@ -150,21 +163,35 @@ trainSAE(
     save_dir="dictionaries",
     log_steps=1,
     steps=steps,
+    save_steps=1000,
 )
 
 print("Training finished. Evaluating SAE...", flush=True)
 for i, trainer_config in enumerate(trainer_configs):
-    ae = SwitchAutoEncoder.from_pretrained(
-        f"dictionaries/{cfg_filename(trainer_config)}/ae.pt",
-        k=trainer_config["k"],
-        experts=trainer_config["experts"],
-        heaviside=trainer_config["heaviside"],
-        device=device,
-    )
-    metrics = evaluate(ae, buffer, device=device)
-    log = {}
-    log.update(
-        {f'{trainer_config["wandb_name"]}-{i}/{k}': v for k, v in metrics.items()}
-    )
-    wandb.log(log, step=steps + 1)
+    if args.sae_type == "switch":
+        ae = SwitchAutoEncoder.from_pretrained(
+            f"dictionaries/{cfg_filename(trainer_config)}/ae.pt",
+            k=trainer_config["k"],
+            experts=trainer_config["experts"],
+            heaviside=trainer_config["heaviside"],
+            device=device,
+        )
+        metrics = evaluate(ae, buffer, device=device)
+        log = {}
+        log.update(
+            {f'{trainer_config["wandb_name"]}-{i}/{k}': v for k, v in metrics.items()}
+        )
+        wandb.log(log, step=steps + 1)
+    else:
+        ae = AutoEncoderTopK.from_pretrained(
+            f"dictionaries/{cfg_filename(trainer_config)}/ae.pt",
+            k=trainer_config["k"],
+            device=device,
+        )
+        metrics = evaluate(ae, buffer, device=device)
+        log = {}
+        log.update(
+            {f'{trainer_config["wandb_name"]}-{i}/{k}': v for k, v in metrics.items()}
+        )
+        wandb.log(log, step=steps + 1)
 wandb.finish()

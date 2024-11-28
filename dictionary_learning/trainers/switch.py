@@ -203,6 +203,8 @@ class SwitchTrainer(SAETrainer):
         
     def loss(self, x, step=None, logging=False):
         
+        x = x.to(self.device)
+
         # Run the SAE
         f = self.ae.encode(x)
         top_acts, top_indices = f.topk(self.k, sorted=False)
@@ -285,6 +287,8 @@ class SwitchTrainer(SAETrainer):
             )
 
     def update(self, step, x):
+        
+        x = x.to(self.device)
         
         # Initialise the decoder bias
         if step == 0:
